@@ -1,6 +1,6 @@
 # rescue-alert-system
 A real-time location-based volunteer (MIT-open-source) alert system for emergency response, developed for Malachim Badrachim, a volunteer-based initiative focused on helping people in urgent situations on the road and beyond. (מלאכים בדרכים).
-NOTE: There is a whatsapp group for the active developers-join the project!
+<dive>NOTE: There is a whatsapp group for the active developers-join the project! <dive/>
 
 .
 

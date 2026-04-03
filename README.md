@@ -36,4 +36,6 @@ Notifications: Firebase Cloud Messaging (FCM)
 This project is licensed under the MIT License.
 
 
+<img width="280" height="239" alt="Screenshot 2026-04-03 172511" src="https://github.com/user-attachments/assets/60fac2df-59a4-428d-ac36-8ef003d5f876" />
+
 

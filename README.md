@@ -8,6 +8,7 @@ A real-time location-based volunteer alert system for emergency response, develo
 When an incident occurs, the system identifies nearby available volunteers and sends them a push notification, allowing them to respond immediately.
 
 ⚙️ Core Features 
+
 Volunteer registration and availability status
 Real-time (or recent) location tracking
 Incident creation by dispatcher/admin
@@ -17,6 +18,7 @@ Accept / decline response system
 Responder tracking and coordination
 
 🧠 How It Works
+
 1 - A dispatcher creates an incident with a location
 2 - The system finds nearby available volunteers
 3 - Notifications are sent in real time
@@ -24,6 +26,7 @@ Responder tracking and coordination
 5 - Responders are tracked and managed by the system
 
 🛠 Tech Stack (Planned)
+
 Backend: Django + Django REST Framework
 Database: PostgreSQL + PostGIS (for geolocation queries)
 Mobile App: Flutter

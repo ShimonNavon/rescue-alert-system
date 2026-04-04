@@ -11,3 +11,10 @@ db.sqlite3
 
 # Mac
 .DS_Store
+
+.env
+venv/
+__pycache__/
+*.pyc
+db.sqlite3
+.DS_Store

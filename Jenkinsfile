@@ -24,7 +24,7 @@ pipeline {
 
         stage('Migrate DB') {
             steps {
-                sh 'docker compose exec -T backend python backend/manage.py migrate'
+                sh 'docker compose exec -T backend python manage.py migrate'
             }
         }
 

@@ -1,13 +1,49 @@
-from django.contrib.gis.geos import Point
 from rest_framework import serializers
-from .models import Alert
+from django.contrib.auth.models import User
+from .models import Alert, UserProfile, Group, Message, Notification
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ['id', 'username', 'email', 'role', 'latitude', 'longitude']
+        read_only_fields = ['id']
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    members = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'members']
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender = serializers.StringRelatedField(read_only=True)
+    voice_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'title', 'text', 'voice_file', 'voice_url', 'latitude', 'longitude', 'timestamp']
+        read_only_fields = ['id', 'timestamp']
+
+    def get_voice_url(self, obj):
+        if obj.voice_file:
+            return obj.voice_file.url
+        return None
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'user', 'token']
+        read_only_fields = ['id']
 
 
 class AlertSerializer(serializers.ModelSerializer):
-    latitude = serializers.FloatField(write_only=True)
-    longitude = serializers.FloatField(write_only=True)
-    location = serializers.SerializerMethodField(read_only=True)
-
     class Meta:
         model = Alert
         fields = [
@@ -16,33 +52,9 @@ class AlertSerializer(serializers.ModelSerializer):
             "description",
             "latitude",
             "longitude",
-            "location",
             "status",
             "priority",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "location", "created_at", "updated_at"]
-
-    def get_location(self, obj):
-        if not obj.location:
-            return None
-        return {
-            "latitude": obj.location.y,
-            "longitude": obj.location.x,
-        }
-
-    def create(self, validated_data):
-        latitude = validated_data.pop("latitude")
-        longitude = validated_data.pop("longitude")
-        validated_data["location"] = Point(longitude, latitude, srid=4326)
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        latitude = validated_data.pop("latitude", None)
-        longitude = validated_data.pop("longitude", None)
-
-        if latitude is not None and longitude is not None:
-            validated_data["location"] = Point(longitude, latitude, srid=4326)
-
-        return super().update(instance, validated_data)
+        read_only_fields = ["id", "created_at", "updated_at"]

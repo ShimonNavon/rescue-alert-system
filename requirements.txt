@@ -1,4 +1,5 @@
 Django==6.0.3
 djangorestframework
+djangorestframework-simplejwt
 psycopg[binary]
 python-decouple

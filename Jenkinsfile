@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
+        stage('Prepare Env') {
             steps {
-                git branch: 'main', url: 'https://github.com/ShimonNavon/rescue-alert-system.git'
+                sh 'cp /host-project/.env .env'
+                sh 'ls -l .env'
             }
         }
 

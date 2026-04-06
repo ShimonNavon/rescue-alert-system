@@ -1,9 +1,16 @@
+from django.shortcuts import render
+
+# Create your views here.
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
-
-
-class UserProfileViewSet(viewsets.ModelViewSet):
+from .models import Alert, UserProfile, Group, Message, Notification
+from .serializers import AlertSerializer, UserProfileSerializer, GroupSerializer, MessageSerializer, NotificationSerializer
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]

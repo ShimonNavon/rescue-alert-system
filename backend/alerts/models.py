@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
 
 
 class UserProfile(models.Model):
@@ -58,8 +60,7 @@ class Alert(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    location = gis_models.PointField()
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -75,6 +76,14 @@ class Alert(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def latitude(self):
+        return self.location.y if self.location else None
+
+    @property
+    def longitude(self):
+        return self.location.x if self.location else None
 
     def __str__(self):
         return f"{self.title} ({self.status})"

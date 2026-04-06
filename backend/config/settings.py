@@ -30,6 +30,7 @@ ALLOWED_HOSTS = config(
 # APPLICATION DEFINITION
 
 INSTALLED_APPS = [
+    'django.contrib.gis',
     'rest_framework',
     'rest_framework_simplejwt',
     'alerts',
@@ -71,14 +72,27 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# DATABASE (SQLite for simplicity)
+# DATABASE CONFIGURATION
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if config("POSTGRES_HOST", default=None):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": config("POSTGRES_DB", default="rescue_alert"),
+            "USER": config("POSTGRES_USER", default="rescue_user"),
+            "PASSWORD": config("POSTGRES_PASSWORD", default="change_me_now"),
+            "HOST": config("POSTGRES_HOST", default="db"),
+            "PORT": config("POSTGRES_PORT", default="5432"),
+        }
     }
-}
+else:
+    # Fallback to SQLite for local development
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # PASSWORD VALIDATION

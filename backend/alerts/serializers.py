@@ -44,6 +44,9 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class AlertSerializer(serializers.ModelSerializer):
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+
     class Meta:
         model = Alert
         fields = [
@@ -58,3 +61,21 @@ class AlertSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_latitude(self, obj):
+        return obj.latitude
+
+    def get_longitude(self, obj):
+        return obj.longitude
+
+    def create(self, validated_data):
+        # Remove latitude/longitude from validated_data as they're not model fields
+        validated_data.pop('latitude', None)
+        validated_data.pop('longitude', None)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Remove latitude/longitude from validated_data as they're not model fields
+        validated_data.pop('latitude', None)
+        validated_data.pop('longitude', None)
+        return super().update(instance, validated_data)

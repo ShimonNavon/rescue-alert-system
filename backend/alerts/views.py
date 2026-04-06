@@ -1,13 +1,6 @@
-from django.shortcuts import render
-
-# Create your views here.
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.models import User
-from .models import Alert, UserProfile, Group, Message, Notification
-from .serializers import AlertSerializer, UserProfileSerializer, GroupSerializer, MessageSerializer, NotificationSerializer
+from django.contrib.gis.geos import Point
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
@@ -144,7 +137,15 @@ class AlertViewSet(viewsets.ModelViewSet):
                 status=400
             )
 
-        # For simplicity, since no GIS, just return all alerts
-        alerts = Alert.objects.all()
+        # Create a point from the provided coordinates
+        user_location = Point(lon, lat, srid=4326)
+
+        # Query alerts within the specified radius (in meters)
+        alerts = Alert.objects.filter(
+            location__distance_lte=(user_location, D(m=radius))
+        ).annotate(
+            distance=Distance('location', user_location)
+        ).order_by('distance')
+
         serializer = self.get_serializer(alerts, many=True)
         return Response(serializer.data)

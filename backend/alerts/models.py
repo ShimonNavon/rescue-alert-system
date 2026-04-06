@@ -60,7 +60,7 @@ class Alert(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    location = gis_models.PointField()
+    location = gis_models.PointField(geography=False)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

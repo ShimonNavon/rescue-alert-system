@@ -124,7 +124,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 class AlertViewSet(viewsets.ModelViewSet):
     queryset = Alert.objects.all()
     serializer_class = AlertSerializer
-    permission_classes = []  # Allow unauthenticated access for testing
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'])
     def nearby(self, request):

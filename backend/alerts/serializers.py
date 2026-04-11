@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.contrib.gis.geos import Point
 from .models import Alert, UserProfile, Group, Message, Notification
 
 
@@ -22,13 +23,32 @@ class GroupSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender = serializers.StringRelatedField(read_only=True)
+    sender = serializers.SerializerMethodField()
     voice_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'title', 'text', 'voice_file', 'voice_url', 'latitude', 'longitude', 'timestamp']
-        read_only_fields = ['id', 'timestamp']
+        fields = [
+            'id',
+            'sender',
+            'title',
+            'text',
+            'voice_file',
+            'voice_url',
+            'latitude',
+            'longitude',
+            'timestamp',
+        ]
+        read_only_fields = ['id', 'timestamp', 'sender']
+
+    def get_sender(self, obj):
+        profile = getattr(obj.sender, "userprofile", None)
+        return {
+            "id": obj.sender.id,
+            "username": obj.sender.username,
+            "email": obj.sender.email,
+            "role": profile.role if profile else None,
+        }
 
     def get_voice_url(self, obj):
         if obj.voice_file:
@@ -40,12 +60,12 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'user', 'token']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'user']
 
 
 class AlertSerializer(serializers.ModelSerializer):
-    latitude = serializers.SerializerMethodField()
-    longitude = serializers.SerializerMethodField()
+    latitude = serializers.FloatField()
+    longitude = serializers.FloatField()
 
     class Meta:
         model = Alert
@@ -62,20 +82,37 @@ class AlertSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
-    def get_latitude(self, obj):
-        return obj.latitude
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["latitude"] = instance.latitude
+        data["longitude"] = instance.longitude
+        return data
 
-    def get_longitude(self, obj):
-        return obj.longitude
+    def validate_latitude(self, value):
+        if not (-90 <= value <= 90):
+            raise serializers.ValidationError("Latitude must be between -90 and 90.")
+        return value
+
+    def validate_longitude(self, value):
+        if not (-180 <= value <= 180):
+            raise serializers.ValidationError("Longitude must be between -180 and 180.")
+        return value
 
     def create(self, validated_data):
-        # Remove latitude/longitude from validated_data as they're not model fields
-        validated_data.pop('latitude', None)
-        validated_data.pop('longitude', None)
+        latitude = validated_data.pop("latitude")
+        longitude = validated_data.pop("longitude")
+        validated_data["location"] = Point(longitude, latitude, srid=4326)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        # Remove latitude/longitude from validated_data as they're not model fields
-        validated_data.pop('latitude', None)
-        validated_data.pop('longitude', None)
+        latitude = validated_data.pop("latitude", None)
+        longitude = validated_data.pop("longitude", None)
+
+        if latitude is not None and longitude is not None:
+            instance.location = Point(longitude, latitude, srid=4326)
+        elif latitude is not None or longitude is not None:
+            raise serializers.ValidationError(
+                "Both latitude and longitude must be provided together."
+            )
+
         return super().update(instance, validated_data)

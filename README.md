@@ -8,6 +8,9 @@ Built as an <strong>MIT open-source project</strong> for Malachim Badrachim (×ž×
 <p>
 <strong>Anyone is welcome to clone, use, fork, or adapt this project</strong> to build their own rescue alert system.
 </p>
+<img width="1024" height="1536" alt="83d6579f-71af-462e-b149-25ca4b15de6b" src="https://github.com/user-attachments/assets/be974be4-5087-4399-b31f-2f231d6860a4" />
+<img width="1024" height="1536" alt="8d92784f-2e64-414e-9b5f-ee2e6ee6b678" src="https://github.com/user-attachments/assets/09b88947-761c-4447-8f66-fcd1a0bc6ad7" />
+
 
 <hr>
 

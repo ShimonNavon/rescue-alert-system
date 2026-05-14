@@ -93,7 +93,17 @@ class ApiClient {
     await _dio.post('/messages', data: data);
   }
 
-  Future<void> registerPushToken(String token) async {
-    await _dio.post('/notifications/token', data: {'token': token});
+  Future<void> registerDevice({
+    required String fcmToken,
+    required String deviceId,
+    required String platform,
+    required String deviceModel,
+  }) async {
+    await _dio.post('/notifications/token', data: {
+      'fcm_token': fcmToken,
+      'device_id': deviceId,
+      'platform': platform,
+      'device_model': deviceModel,
+    });
   }
 }

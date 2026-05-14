@@ -1,6 +1,13 @@
 from django.contrib.gis.geos import Point
 from rest_framework import serializers
-from .models import Alert
+from .models import Alert, DeviceRegistration
+
+
+class DeviceRegistrationSerializer(serializers.Serializer):
+    fcm_token = serializers.CharField()
+    device_id = serializers.CharField(max_length=256)
+    platform = serializers.ChoiceField(choices=DeviceRegistration.Platform.values)
+    device_model = serializers.CharField(max_length=128, required=False, allow_blank=True, default='')
 
 
 class AlertSerializer(serializers.ModelSerializer):

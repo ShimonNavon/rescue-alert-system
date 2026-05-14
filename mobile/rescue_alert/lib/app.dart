@@ -15,6 +15,7 @@ import 'services/api_client.dart';
 import 'services/auth_service.dart';
 import 'services/audio_service.dart';
 import 'services/deeplink_service.dart';
+import 'services/device_service.dart';
 import 'services/location_service.dart';
 import 'services/notification_service.dart';
 import 'services/permission_service.dart';
@@ -33,6 +34,7 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
   late final LocationService _locationService;
   late final AudioService _audioService;
   late final DeepLinkService _deepLinkService;
+  late final DeviceService _deviceService;
   late final NotificationService _notificationService;
   late final AppRouter _appRouter;
   late final MessageRepository _messageRepository;
@@ -49,6 +51,7 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
     _locationService = LocationService();
     _audioService = AudioService();
     _deepLinkService = DeepLinkService();
+    _deviceService = DeviceService();
     _messageRepository = MessageRepository(apiClient: _apiClient);
     _locationRepository = LocationRepository(
       apiClient: _apiClient,
@@ -59,6 +62,7 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
       authService: _authService,
       deepLinkService: _deepLinkService,
       apiClient: _apiClient,
+      deviceService: _deviceService,
     );
     _appRouter = AppRouter(
       authService: _authService,
@@ -69,13 +73,12 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
 
   Future<void> _bootstrap() async {
     _authSub = _authService.authStateChanges.listen((user) async {
-      if (user == null) {
-        return;
-      }
+      if (user == null) return;
       final token = await user.getIdToken();
       if (token != null) {
         await _apiClient.setAuthToken(token);
       }
+      await _notificationService.registerCurrentToken();
     });
 
     try {

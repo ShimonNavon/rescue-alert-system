@@ -43,7 +43,7 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
   @override
   void initState() {
     super.initState();
-    _apiClient = ApiClient(baseUrl: 'https://api.example.com');
+    _apiClient = ApiClient(baseUrl: 'Https://rescue-team.netlify.app');
     _authService = AuthService();
     _permissionService = PermissionService();
     _locationService = LocationService();

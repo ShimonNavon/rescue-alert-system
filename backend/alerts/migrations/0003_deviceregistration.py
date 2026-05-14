@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('alerts', '0001_initial'),
+        ('alerts', '0002_convert_to_geospatial'),
     ]
 
     operations = [

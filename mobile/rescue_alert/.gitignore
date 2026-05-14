@@ -36,6 +36,11 @@ migrate_working_dir/
 # Lock file
 pubspec.lock
 
+# Firebase config — contains API keys, do not commit
+**/google-services.json
+**/GoogleService-Info.plist
+lib/firebase_options.dart
+
 # Symbolication related
 app.*.symbols
 

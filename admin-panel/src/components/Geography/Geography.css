@@ -1,0 +1,12 @@
+
+/* ── Layout ───────────────────────────── */
+.panelBoardApp {
+  min-height:auto;
+  background: var(--bg);
+  display: flex;
+  flex-direction: row;
+  direction: rtl;
+  /* overflow: hidden; */
+  z-index: 0;
+}
+

@@ -1,0 +1,13 @@
+/* ── Collapse Button ───────────────────── */
+.collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 16px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}

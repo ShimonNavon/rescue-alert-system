@@ -1,0 +1,154 @@
+/* ── Panel ───────────────────────────── */
+.panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.panel-header-actions {
+  position: relative;
+  display: flex;
+}
+
+.panel-options-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.panel-options-btn:hover {
+  background-color: var(--code-bg);
+}
+
+#panel-options-item {
+  color: var(--text-h);
+  background: none;
+}
+.panel-options-item .button {
+  color: var(--text-h);
+  background: none;
+}
+
+
+
+.panel-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+.panel-title-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.panel-title-input   {
+  flex: 1;
+  padding: 6px 10px;
+  font-weight: 600;
+  font-size: 15px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-h);
+}
+.panel-title-input , input{
+    outline: none;
+
+}
+
+.panel-title-input:focus {
+  outline: none;
+  border-color: var(--text-h);
+}
+
+.panel-title-save,
+.panel-title-cancel, button {
+  padding: 4px 8px;
+  border: none;
+  background: var(--code-bg);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  border-radius: 4px;
+}
+
+.panel-title-save:hover {
+  background-color: var(--code-bg);
+}
+
+.panel-title-cancel:hover {
+  background-color: var(--code-bg);
+}
+
+
+
+.panel-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: flex-end;
+  direction: rtl;
+}
+
+.panel-footer {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+}
+
+.panel-add {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.panel-add-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 24px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Panel Collapsed ────────────────── */
+.panel-collapsed {
+  padding: 20px 24px;
+}
+
+.panel-collapsed .panel-header {
+  margin-bottom: 12px;
+}
+
+
+

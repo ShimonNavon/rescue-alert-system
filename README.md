@@ -55,6 +55,7 @@ When an incident occurs, the system identifies nearby available volunteers and a
 <ul>
   <li><strong>Backend:</strong> Django + Django REST Framework</li>
   <li><strong>Database:</strong> PostgreSQL + PostGIS</li>
+  <li><strong>Admin Panel:</strong> React 19 + TypeScript + Vite (web dispatcher dashboard)</li>
   <li><strong>Mobile App:</strong> Flutter</li>
   <li><strong>Notifications:</strong> Firebase Cloud Messaging (FCM)</li>
   <li><strong>Infrastructure:</strong> Docker + Docker Compose</li>
@@ -90,11 +91,35 @@ docker compose up --build
 docker compose exec backend python manage.py migrate
 </pre>
 
-<h3>Backend URL</h3>
+<h3>Service URLs</h3>
+
+<ul>
+  <li><strong>Backend API:</strong> <code>http://127.0.0.1:8000</code></li>
+  <li><strong>Admin Panel:</strong> <code>http://localhost:5173</code></li>
+</ul>
+
+<hr>
+
+<h2>🖥 Admin Panel</h2>
+
+<p>
+The <code>admin-panel/</code> folder contains a React + TypeScript web dashboard for dispatchers and operators. It connects to the same Django API and provides views for managing alerts, monitoring volunteer locations on a map, group messaging, and push-to-talk.
+</p>
+
+<h3>Run standalone</h3>
 
 <pre>
-http://127.0.0.1:8000
+cd admin-panel
+npm install
+cp .env.example .env
+npm run dev
 </pre>
+
+<p>Available at <code>http://localhost:5173</code>. See <a href="admin-panel/README.md">admin-panel/README.md</a> for full documentation.</p>
+
+<h3>Run with Docker Compose</h3>
+
+<p>The admin panel is included in the Docker Compose stack and starts automatically with <code>docker compose up --build</code>.</p>
 
 <hr>
 

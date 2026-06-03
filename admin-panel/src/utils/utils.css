@@ -1,0 +1,25 @@
+.situation__timestamp {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.situation__timestamp strong {
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+/* ── Status ── */
+.situation__status {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.situation__status--inactive {
+  background: var(--code-bg);
+  color: var(--text);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+}

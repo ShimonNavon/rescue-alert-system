@@ -1,0 +1,26 @@
+export const chatItems = [
+  {
+    id: 1,
+    time: "17:17",
+    title: "21 - נפילת רסיס",
+    sender: "admin",
+    preview: "הארוע ה...",
+    badge: 1,
+    dotType: "none",
+    avatarType: "list",
+    read: true,
+    mic: true,
+  },
+    {
+    id: 2,
+    time: "13:17",
+    title: "20 - נפילת רקטה",
+    sender: "admin",
+    preview: "הארוע ה...",
+    badge: 1,
+    dotType: "none",
+    avatarType: "list",
+    read: true,
+    mic: true,
+  },
+];

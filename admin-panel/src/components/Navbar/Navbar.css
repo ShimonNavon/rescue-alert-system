@@ -1,0 +1,254 @@
+.navbar-shell {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  height: 60px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-family: sans-serif;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+#nav-menu-toggle {
+  display: none;
+}
+
+.icon {
+  width: 36px;
+  height: 36px;
+  background: var(--code-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.nav-mobile-icons {
+  display: none;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+  background-color: var(--bg);
+  border: none;
+  white-space: nowrap;
+}
+
+.icon {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.icon:hover {
+  background: var(--code-bg-hover);
+}
+
+.nav-item.active {
+  font-weight: 600;
+}
+
+.nav-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: -22px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #f4c430;
+  border-radius: 2px;
+}
+
+.btnprimary {
+  background: #f4c430;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: whitesmoke;
+}
+
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.logo-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.nav-backdrop {
+  display: none;
+}
+
+.link {
+  text-decoration: none;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: 0.8px;
+  padding: 17px 0px;
+  width:80px;
+
+}
+
+a.active {
+  /* text-decoration: underline solid #f4c430 2px; */
+  /* text-underline-offset: 10px; */
+  border-bottom: 3px solid #f4c430;
+
+}
+.btn-primary.link {
+  color: var(--text-h);
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  #nav-menu-toggle {
+    display: none;
+  }
+
+  .navbar {
+    padding: 0 12px;
+  }
+
+  .nav-center {
+    gap: 12px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+  }
+
+  .nav-center::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .nav-item.active::after {
+    bottom: -18px;
+  }
+
+}
+
+@media (max-width: 768px) {
+  #nav-menu-toggle {
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  .nav-desktop-only {
+    display: none;
+  }
+
+  .nav-center {
+    display: none;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16px;
+    gap: 10px;
+    max-height: 100%;
+    overflow-y: auto;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    z-index: 2;
+  }
+
+  .navbar-shell.menu-open .nav-center {
+    display: flex;
+  }
+
+  .nav-mobile-icons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .nav-item.active::after {
+    display: none;
+  }
+
+  .nav-item.active {
+    background: var(--code-bg-hover);
+  }
+
+
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .navbar-shell.menu-open .nav-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

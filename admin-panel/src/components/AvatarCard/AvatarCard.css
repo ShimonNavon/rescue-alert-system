@@ -1,0 +1,21 @@
+/* ── Avatar Card ───────────────────────── */
+.avatar-scale {
+  transition: transform 0.15s;
+  transform: scale(2);
+  margin: 20px;
+}
+
+.avatar-scale:hover {
+  transform: scale(2.2);
+}
+
+.avatar-name {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  max-width: 72px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

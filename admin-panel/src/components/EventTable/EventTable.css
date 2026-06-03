@@ -1,0 +1,348 @@
+.table-wrapper {
+  width: 95%;
+  margin-inline: auto;
+  box-sizing: border-box;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: auto;
+  border: 1px solid var(--border);
+
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: var(--text-h);
+}
+
+.search {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: var(--code-bg);
+  color: var(--text);
+}
+
+.event-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  color: var(--text);
+
+}
+
+.event-table th {
+  font-size: 14px;
+}
+
+.event-table td {
+  font-size: 13px;
+}
+
+.event-table th,
+.event-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #fff;
+  /* keep text white for contrast */
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Status colors using accent variables */
+.status.opened {
+  background-color: var(--accent);
+}
+
+.status.assigned {
+  background-color: #ff9800;
+}
+
+.status.arrived {
+  background-color: #2196f3;
+}
+
+.status.solved {
+  background-color: #9e9e9e;
+}
+
+.status.closed {
+  background-color: #f44336;
+}
+
+/* optional: you can create a variable for red if needed */
+
+/* Priority colors using accent shades or variables */
+.priority.high {
+  background-color: #ff9800;
+}
+
+.priority.medium {
+  background-color: #2196f3;
+}
+
+.priority.low {
+  background-color: #9e9e9e;
+}
+
+/* Action buttons */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.action-btn {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #fff;
+  /* buttons always white text */
+}
+
+.action-btn.view {
+  background-color: var(--accent);
+}
+
+.action-btn.close {
+  background-color: #f44336;
+}
+
+/* Optional: hover states using accent-bg variable */
+.action-btn.view:hover {
+  background-color: var(--accent-border);
+}
+
+.action-btn.close:hover {
+  opacity: 0.85;
+}
+
+.filters-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+
+}
+
+.filters-row input,
+.filters-row select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg);
+  width: 300px;
+}
+
+thead tr.filters th {
+  padding: 6px;
+  vertical-align: middle;
+}
+
+.filter-cell--clear {
+  vertical-align: middle;
+}
+
+thead tr.filters input,
+thead tr.filters select {
+  width: 70%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-bg);
+}
+
+thead tr.filters input:focus,
+thead tr.filters select:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+select {
+  color: var(--text);
+}
+
+.clear-btn {
+  width: 100%;
+  padding: 6px;
+  border: none;
+  background: var(--code-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.clear-btn:hover {
+  background: var(--code-bg-hover);
+}
+
+.events_avatar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  row-gap: 8px;
+
+}
+
+.map-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tablet: wide table scrolls horizontally */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .table-wrapper {
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  .event-table {
+    min-width: 820px;
+  }
+
+  thead tr.filters input,
+  thead tr.filters select {
+    width: 100%;
+  }
+}
+
+/* Mobile: stacked filters + card rows */
+@media (max-width: 768px) {
+  .table-wrapper {
+    max-width: 100%;
+    padding: 12px;
+    border-radius: 0;
+  }
+
+  .event-table {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+  }
+
+  .event-table thead tr:first-child {
+    display: none;
+  }
+
+  .event-table thead tr.filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .event-table thead tr.filters th {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  .event-table thead tr.filters .filter-cell--clear {
+    grid-column: 1 / -1;
+  }
+
+  .event-table thead tr.filters .filter-cell[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-h, var(--text));
+    text-align: right;
+  }
+
+  .event-table thead tr.filters input,
+  .event-table thead tr.filters select {
+    width: 100%;
+  }
+
+  .event-table tbody {
+    display: block;
+  }
+
+  .event-table tbody tr {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 4px 0;
+    background: var(--code-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .event-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    font-size: 14px;
+  }
+
+  .event-table tbody td:last-child {
+    border-bottom: none;
+  }
+
+  .event-table tbody td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    flex-shrink: 0;
+    color: var(--text-h, var(--text));
+    font-size: 13px;
+  }
+
+  .event-table tbody td.cell-select {
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .event-table tbody td.cell-select::before {
+    content: none;
+  }
+
+  .event-table tbody td.actions {
+    flex-direction: column;
+    /* align-items: stretch; */
+    gap: 8px;
+  }
+
+  .event-table tbody td.actions .action-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .event-table tbody td .events_avatar {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .event-table tbody td .badge {
+    margin-inline-start: auto;
+  }
+}

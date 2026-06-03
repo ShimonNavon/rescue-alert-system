@@ -1,0 +1,76 @@
+.notfound-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  font-family: var(--sans);
+  padding: 20px;
+}
+
+.notfound-card {
+  text-align: center;
+  padding: 40px 32px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  max-width: 420px;
+  width: 100%;
+}
+
+.notfound-code {
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+  font-family: var(--heading);
+}
+
+.notfound-title {
+  font-size: 22px;
+  color: var(--text-h);
+  margin-bottom: 8px;
+}
+
+.notfound-text {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.notfound-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.notfound-button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.notfound-button.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.notfound-button.primary:hover {
+  opacity: 0.9;
+}
+
+.notfound-button.secondary {
+  background: transparent;
+  color: var(--text-h);
+  border-color: var(--border);
+}
+
+.notfound-button.secondary:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}

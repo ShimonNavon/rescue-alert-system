@@ -1,0 +1,15 @@
+.theme-switcher {
+  padding:  8px ;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.theme-switcher:hover {
+  background-color: var(--accent-border);
+  color: #fff;
+}

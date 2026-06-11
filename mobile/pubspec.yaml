@@ -1,0 +1,80 @@
+name: rescue_app
+description: Rescue emergency mobile application
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  rxdart: ^0.28.0
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.5
+  dio: ^5.9.0
+  go_router: ^14.8.1
+  intl: ^0.20.2
+  firebase_messaging: ^15.2.10
+  curved_labeled_navigation_bar: ^2.0.6
+  flutter_riverpod: ^3.3.1
+  flutter_callkit_incoming: ^3.0.0
+  wakelock_plus: ^1.5.2
+  permission_handler: ^12.0.1
+  vibration: ^3.1.8
+  uuid: ^4.5.3
+  shared_preferences: ^2.5.5
+  json_annotation: ^4.11.0
+  flutter_secure_storage: ^10.0.0
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
+  mapbox_maps_flutter: ^2.22.0
+  geolocator: ^14.0.2
+  flutter_dotenv: ^5.2.1
+  rflutter_alert: ^2.0.7
+  flutter_local_notifications: ^18.0.1
+  app_links: ^7.0.0
+  audioplayers: ^6.6.0
+  record: ^6.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_native_splash: ^2.4.6
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - .env.staging
+    - .env.production
+    - assets/images/
+    - assets/images/icons/
+    - assets/images/icons/navbar/
+    - assets/images/maps/
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: web/icons/Icon-512.png
+  android: true
+  ios: true
+  web: false
+
+  android_12:
+    color: "#FFFFFF"
+    image: web/icons/Icon-512.png
+
+flutter_launcher_icons:
+  android: false
+  ios: true
+  image_path: "assets/images/app_logo.png"
+  web:
+    generate: false
+  windows:
+    generate: false
+  macos:
+    generate: false

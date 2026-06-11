@@ -104,7 +104,7 @@ class RestApiService {
       }
 
       await _dio.post(
-        '/locations/current',
+        '/api/user/location/',
         data: {'latitude': latitude, 'longitude': longitude},
       );
     } on DioException catch (e) {
@@ -122,7 +122,7 @@ class RestApiService {
         return [];
       }
 
-      final response = await _dio.get('/locations');
+      final response = await _dio.get('/api/user/all/');
       final list = (response.data as List<dynamic>? ?? const [])
           .map((item) => UserLocation.fromJson(item as Map<String, dynamic>))
           .toList();
@@ -142,7 +142,7 @@ class RestApiService {
         return [];
       }
 
-      final response = await _dio.get('/messages');
+      final response = await _dio.get('/api/message/');
       final list = (response.data as List<dynamic>? ?? const [])
           .map((item) => AppMessage.fromJson(item as Map<String, dynamic>))
           .toList();
@@ -162,7 +162,7 @@ class RestApiService {
         return [];
       }
 
-      final response = await _dio.get('/group');
+      final response = await _dio.get('/api/group/');
       return (response.data as List<dynamic>? ?? const [])
           .map((item) => UserGroup.fromJson(item as Map<String, dynamic>))
           .toList();
@@ -181,7 +181,7 @@ class RestApiService {
         return [];
       }
 
-      final response = await _dio.get('/groups/$groupId/users');
+      final response = await _dio.get('/api/group/$groupId/');
       return (response.data as List<dynamic>? ?? const [])
           .cast<Map<String, dynamic>>();
     } on DioException catch (e) {
@@ -202,7 +202,7 @@ class RestApiService {
         return;
       }
 
-      await _dio.post('/groups/$groupId/users', data: {'userId': userId});
+      await _dio.post('/api/group/$groupId/add_user/', data: {'user_id': userId});
     } on DioException catch (e) {
       debugPrint('addUserToGroup error: ${e.message}');
       return;
@@ -221,7 +221,7 @@ class RestApiService {
         return;
       }
 
-      await _dio.delete('/groups/$groupId/users/$userId');
+      await _dio.delete('/api/group/$groupId/remove_user/', data: {'user_id': userId});
     } on DioException catch (e) {
       debugPrint('removeUserFromGroup error: ${e.message}');
       return;
@@ -262,12 +262,12 @@ class RestApiService {
         'title': title,
         'text': text,
         if (voicePayload != null)
-          'voice': MultipartFile.fromBytes(
+          'voice_file': MultipartFile.fromBytes(
             voicePayload,
             filename: 'voice_note.m4a',
           ),
       });
-      await _dio.post('/messages', data: data);
+      await _dio.post('/api/message/', data: data);
     } on DioException catch (e) {
       debugPrint('postMessage error: ${e.message}');
       return;
@@ -288,7 +288,7 @@ class RestApiService {
         return;
       }
 
-      await _dio.post('/notifications/token', data: {
+      await _dio.post('/api/notifications/token', data: {
         'fcm_token': fcmToken,
         'device_id': deviceId,
         'platform': platform,

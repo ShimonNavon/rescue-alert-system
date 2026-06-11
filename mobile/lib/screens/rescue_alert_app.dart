@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -93,7 +94,7 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
       _groupRepository = GroupRepository(apiClient: _apiClient);
       await _notificationService.initialize();
 
-      _authSub = _authService.authStateChanges.listen((user) async {
+      _authSub = FirebaseAuth.instance.idTokenChanges().listen((user) async {
         if (user == null) return;
         final token = await user.getIdToken();
         if (token != null) {

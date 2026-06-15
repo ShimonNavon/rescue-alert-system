@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Rescue Alert System",
-    "description": "Complete API reference for the Rescue Alert System backend. All protected endpoints require a JWT Bearer token obtained from POST /api/token/. Set the `base_url` and `access_token` collection variables before use.",
+    "description": "Complete API reference for the Rescue Alert System backend.\n\n**Authentication:** All endpoints require a Firebase ID Token sent as a Bearer token:\n```\nAuthorization: Bearer <firebase_id_token>\n```\nObtain an ID token from the Firebase SDK (`user.getIdToken()`) or via the Firebase REST API. Set the `firebase_token` collection variable before sending any request.\n\nSet `base_url` to your server (e.g. `http://localhost:8000`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,14 +11,9 @@
       "description": "Base URL of the backend server"
     },
     {
-      "key": "access_token",
+      "key": "firebase_token",
       "value": "",
-      "description": "JWT access token — populated automatically by the Login request"
-    },
-    {
-      "key": "refresh_token",
-      "value": "",
-      "description": "JWT refresh token — populated automatically by the Login request"
+      "description": "Firebase ID Token — obtain via user.getIdToken() in the Firebase SDK or the Firebase REST Auth API"
     }
   ],
   "auth": {
@@ -26,120 +21,15 @@
     "bearer": [
       {
         "key": "token",
-        "value": "{{access_token}}",
+        "value": "{{firebase_token}}",
         "type": "string"
       }
     ]
   },
   "item": [
     {
-      "name": "Authentication",
-      "description": "Obtain and refresh JWT tokens. Tokens use a 30-day lifetime.",
-      "item": [
-        {
-          "name": "Login (Obtain Tokens)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const body = pm.response.json();",
-                  "    pm.collectionVariables.set('access_token', body.access);",
-                  "    pm.collectionVariables.set('refresh_token', body.refresh);",
-                  "    console.log('Tokens saved to collection variables.');",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"your_username\",\n  \"password\": \"your_password\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/token/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "token", ""]
-            },
-            "description": "Authenticate with username and password. The test script automatically saves `access` and `refresh` tokens to collection variables."
-          },
-          "response": [
-            {
-              "name": "200 OK",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"access\": \"<jwt_access_token>\",\n  \"refresh\": \"<jwt_refresh_token>\"\n}"
-            },
-            {
-              "name": "401 Unauthorized",
-              "status": "Unauthorized",
-              "code": 401,
-              "body": "{\n  \"detail\": \"No active account found with the given credentials\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Refresh Access Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const body = pm.response.json();",
-                  "    pm.collectionVariables.set('access_token', body.access);",
-                  "    console.log('Access token refreshed.');",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/token/refresh/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "token", "refresh", ""]
-            },
-            "description": "Exchange a refresh token for a new access token. The test script automatically updates the `access_token` collection variable."
-          },
-          "response": [
-            {
-              "name": "200 OK",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"access\": \"<new_jwt_access_token>\"\n}"
-            },
-            {
-              "name": "401 Invalid Token",
-              "status": "Unauthorized",
-              "code": 401,
-              "body": "{\n  \"detail\": \"Token is invalid or expired\"\n}"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Alerts",
-      "description": "Create and manage rescue alerts. All endpoints require JWT auth.",
+      "description": "Create and manage rescue alerts. All endpoints require a Firebase Bearer token.",
       "item": [
         {
           "name": "List Alerts",
@@ -150,7 +40,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "alerts", ""]
             },
-            "description": "Returns all alerts."
+            "description": "Returns all alerts ordered by newest first."
           },
           "response": [
             {
@@ -286,14 +176,14 @@
                 { "key": "radius", "value": "5000", "description": "Search radius in meters" }
               ]
             },
-            "description": "Returns all alerts within the specified radius (meters) of the given coordinates."
+            "description": "Returns all alerts within `radius` meters of the given coordinates (`lat`, `lon`). All three query params are required."
           }
         }
       ]
     },
     {
       "name": "User Profiles",
-      "description": "Manage user profiles and locations. All endpoints require JWT auth.",
+      "description": "Manage user profiles and locations. All endpoints require a Firebase Bearer token.\n\nNote: Django user accounts are created automatically on first login via Firebase — there is no separate registration endpoint.",
       "item": [
         {
           "name": "List All User Profiles",
@@ -311,7 +201,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"username\": \"jdoe\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060\n  }\n]"
             }
           ]
         },
@@ -331,7 +221,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"username\": \"jdoe\",\n  \"email\": \"jdoe@example.com\",\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
+              "body": "{\n  \"id\": 1,\n  \"username\": \"<firebase_uid>\",\n  \"email\": \"jdoe@example.com\",\n  \"role\": \"user\",\n  \"latitude\": null,\n  \"longitude\": null\n}"
             }
           ]
         },
@@ -344,7 +234,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "1", ""]
             },
-            "description": "Returns the profile of a specific user by ID."
+            "description": "Returns the profile of a specific user by their profile ID."
           }
         },
         {
@@ -363,45 +253,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "update_profile", ""]
             },
-            "description": "Update the authenticated user's profile.\n\n**role options:** `user`, `admin`, `rescuer`"
-          }
-        },
-        {
-          "name": "Update User Profile by ID (Full)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/user/1/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "user", "1", ""]
-            },
-            "description": "Replace all fields on a user profile."
-          }
-        },
-        {
-          "name": "Update User Profile by ID (Partial)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"role\": \"admin\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/user/1/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "user", "1", ""]
-            },
-            "description": "Partially update a user profile."
+            "description": "Update the authenticated user's own profile.\n\n**role options:** `user`, `admin`, `rescuer`"
           }
         },
         {
@@ -420,7 +272,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "location", ""]
             },
-            "description": "Update the authenticated user's current location coordinates."
+            "description": "Update the authenticated user's current GPS coordinates."
           }
         },
         {
@@ -432,7 +284,45 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "all", ""]
             },
-            "description": "Returns all user profiles that have valid (non-null) latitude and longitude values."
+            "description": "Returns all user profiles that have a non-null latitude and longitude. Useful for rendering users on a map."
+          }
+        },
+        {
+          "name": "Update User Profile by ID (Full)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "1", ""]
+            },
+            "description": "Replace all fields on a specific user profile by ID (admin use)."
+          }
+        },
+        {
+          "name": "Update User Profile by ID (Partial)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "1", ""]
+            },
+            "description": "Partially update a specific user profile by ID (admin use)."
           }
         },
         {
@@ -459,7 +349,7 @@
     },
     {
       "name": "Groups",
-      "description": "Create and manage user groups. All endpoints require JWT auth.",
+      "description": "Create and manage user groups. All endpoints require a Firebase Bearer token.",
       "item": [
         {
           "name": "List Groups",
@@ -497,7 +387,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "group", ""]
             },
-            "description": "Create a new group. `members` is an array of user profile IDs. Group names must be unique."
+            "description": "Create a new group. `members` is an array of Django user IDs. Group names must be unique."
           },
           "response": [
             {
@@ -594,7 +484,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "group", "1", "add_user", ""]
             },
-            "description": "Add a user to an existing group by user profile ID."
+            "description": "Add a user to an existing group by Django user ID."
           },
           "response": [
             {
@@ -602,6 +492,12 @@
               "status": "OK",
               "code": 200,
               "body": "{\n  \"message\": \"User added to group\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"error\": \"User not found\"\n}"
             }
           ]
         },
@@ -621,7 +517,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "group", "1", "remove_user", ""]
             },
-            "description": "Remove a user from a group by user profile ID."
+            "description": "Remove a user from a group by Django user ID."
           },
           "response": [
             {
@@ -629,6 +525,12 @@
               "status": "OK",
               "code": 200,
               "body": "{\n  \"message\": \"User removed from group\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"error\": \"User not found\"\n}"
             }
           ]
         }
@@ -636,7 +538,7 @@
     },
     {
       "name": "Messages",
-      "description": "Send and retrieve messages. Supports text and voice attachments. All endpoints require JWT auth.",
+      "description": "Send and retrieve messages. Supports text and voice attachments. All endpoints require a Firebase Bearer token.\n\nThe `sender` field is set automatically from the authenticated Firebase user.",
       "item": [
         {
           "name": "List Messages",
@@ -654,12 +556,12 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"sender\": {\n      \"id\": 1,\n      \"username\": \"jdoe\",\n      \"email\": \"jdoe@example.com\",\n      \"role\": \"rescuer\"\n    },\n    \"title\": \"Evacuation Update\",\n    \"text\": \"Sector 3 is clear.\",\n    \"voice_url\": null,\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"timestamp\": \"2024-01-15T10:35:00Z\"\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"sender\": {\n      \"id\": 1,\n      \"username\": \"<firebase_uid>\",\n      \"email\": \"jdoe@example.com\",\n      \"role\": \"rescuer\"\n    },\n    \"title\": \"Evacuation Update\",\n    \"text\": \"Sector 3 is clear.\",\n    \"voice_url\": null,\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"timestamp\": \"2024-01-15T10:35:00Z\"\n  }\n]"
             }
           ]
         },
         {
-          "name": "List Messages (Ordered by Newest)",
+          "name": "List Messages (Newest First)",
           "request": {
             "method": "GET",
             "url": {
@@ -686,14 +588,14 @@
               "host": ["{{base_url}}"],
               "path": ["api", "message", ""]
             },
-            "description": "Create a text message. The `sender` is set automatically from the authenticated user."
+            "description": "Create a text message. `sender` is set automatically from the authenticated user. `latitude`, `longitude`, and `text` are optional."
           },
           "response": [
             {
               "name": "201 Created",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 1,\n  \"sender\": {\n    \"id\": 1,\n    \"username\": \"jdoe\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\"\n  },\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Sector 3 is clear. All units proceed to sector 4.\",\n  \"voice_url\": null,\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060,\n  \"timestamp\": \"2024-01-15T10:35:00Z\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"sender\": {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\"\n  },\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Sector 3 is clear. All units proceed to sector 4.\",\n  \"voice_url\": null,\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060,\n  \"timestamp\": \"2024-01-15T10:35:00Z\"\n}"
             }
           ]
         },
@@ -706,8 +608,8 @@
               "formdata": [
                 { "key": "title", "value": "Voice Update", "type": "text" },
                 { "key": "text", "value": "See attached audio", "type": "text", "description": "Optional" },
-                { "key": "latitude", "value": "40.7128", "type": "text" },
-                { "key": "longitude", "value": "-74.0060", "type": "text" },
+                { "key": "latitude", "value": "40.7128", "type": "text", "description": "Optional" },
+                { "key": "longitude", "value": "-74.0060", "type": "text", "description": "Optional" },
                 { "key": "voice_file", "type": "file", "src": "", "description": "Audio file attachment" }
               ]
             },
@@ -716,7 +618,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "message", ""]
             },
-            "description": "Create a message with a voice file attachment. Use `multipart/form-data`. The response includes a `voice_url` pointing to the uploaded file."
+            "description": "Create a message with a voice file attachment. Use `multipart/form-data` (do not set Content-Type manually — Postman sets it automatically with the boundary). The response includes a `voice_url` pointing to the uploaded file."
           }
         },
         {
@@ -792,8 +694,53 @@
       ]
     },
     {
-      "name": "Notifications",
-      "description": "Manage push notification tokens (standard). All endpoints require JWT auth.",
+      "name": "Device Registration",
+      "description": "Register a mobile device for Firebase Cloud Messaging (FCM) push notifications. Requires a Firebase Bearer token.",
+      "item": [
+        {
+          "name": "Register Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"<firebase_cloud_messaging_token>\",\n  \"device_id\": \"unique-device-identifier\",\n  \"platform\": \"android\",\n  \"device_model\": \"Samsung Galaxy S21\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/token",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "token"]
+            },
+            "description": "Register or update a mobile device for push notifications.\n\n**platform options:** `android`, `ios`, `other`\n\n**device_model:** Optional. Human-readable device name.\n\nIf the same `device_id` is already registered for this Firebase user, the `fcm_token` is updated (upsert). Returns 204 on success."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"fcm_token\": [\"This field is required.\"],\n  \"device_id\": [\"This field is required.\"],\n  \"platform\": [\"This field is required.\"]\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"error\": \"Unauthorized\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notifications (Legacy)",
+      "description": "Simple push notification token store. All endpoints require a Firebase Bearer token.\n\nNote: For new integrations prefer the **Device Registration** endpoint which supports multi-device per user, platform tagging, and FCM upsert.",
       "item": [
         {
           "name": "List Notification Tokens",
@@ -855,25 +802,7 @@
           }
         },
         {
-          "name": "Update Notification Token (Full)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"<new_fcm_token_string>\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/notification/1/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "notification", "1", ""]
-            }
-          }
-        },
-        {
-          "name": "Update Notification Token (Partial)",
+          "name": "Update Notification Token",
           "request": {
             "method": "PATCH",
             "header": [
@@ -887,7 +816,8 @@
               "raw": "{{base_url}}/api/notification/1/",
               "host": ["{{base_url}}"],
               "path": ["api", "notification", "1", ""]
-            }
+            },
+            "description": "Update a notification token."
           }
         },
         {
@@ -907,61 +837,6 @@
               "status": "No Content",
               "code": 204,
               "body": ""
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Device Registration (Firebase)",
-      "description": "Register a mobile device for push notifications via Firebase. Uses Firebase ID Token auth instead of JWT.",
-      "item": [
-        {
-          "name": "Register Device",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "<firebase_id_token>",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fcm_token\": \"<firebase_cloud_messaging_token>\",\n  \"device_id\": \"unique-device-identifier\",\n  \"platform\": \"android\",\n  \"device_model\": \"Samsung Galaxy S21\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/notifications/token",
-              "host": ["{{base_url}}"],
-              "path": ["api", "notifications", "token"]
-            },
-            "description": "Register or update a mobile device for push notifications.\n\n**Auth:** `Authorization: Bearer <firebase_id_token>` — this endpoint uses a Firebase ID Token, NOT a JWT token.\n\n**platform options:** `android`, `ios`, `other`\n\n**device_model:** Optional. Human-readable device name.\n\nIf the device_id already exists for this Firebase user, the FCM token is updated."
-          },
-          "response": [
-            {
-              "name": "204 No Content",
-              "status": "No Content",
-              "code": 204,
-              "body": ""
-            },
-            {
-              "name": "400 Bad Request",
-              "status": "Bad Request",
-              "code": 400,
-              "body": "{\n  \"error\": \"Missing required field: fcm_token\"\n}"
-            },
-            {
-              "name": "401 Unauthorized",
-              "status": "Unauthorized",
-              "code": 401,
-              "body": "{\n  \"detail\": \"Authentication credentials were not provided.\"\n}"
             }
           ]
         }

@@ -9,6 +9,9 @@ db.sqlite3
 # Environment variables
 .env
 
+# Secrets
+backend/firebase-service-account.json
+
 # Mac
 .DS_Store
 

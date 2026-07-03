@@ -1,8 +1,18 @@
 import {type  Alert } from '../types/types';
+import { auth } from '../firebase';
 
 const TIMEOUT_MS = 60000;
 const RETRY_COUNT = 2;
 const BACKOFF_MS = 1000;
+
+/**
+ * Build headers with the current user's Firebase ID token.
+ * getIdToken() refreshes the token automatically when it is close to expiry.
+ */
+const authHeaders = async (): Promise<HeadersInit> => {
+  const token = await auth.currentUser?.getIdToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 /**
  * Fetch alerts with retry logic and timeout handling
@@ -49,7 +59,7 @@ export const fetchAlerts = async (): Promise<{ data: Alert[]; error: string | nu
   const url = `${baseUrl}alerts/`;
 
   try {
-    const res = await fetchWithRetry(url);
+    const res = await fetchWithRetry(url, { headers: await authHeaders() });
 
     // Try JSON first, fallback to empty array
     const text = await res.text();
@@ -90,7 +100,7 @@ export const fetchAlertsWithFilter = async (
   }
 
   try {
-    const res = await fetchWithRetry(url);
+    const res = await fetchWithRetry(url, { headers: await authHeaders() });
 
     const text = await res.text();
     let data: Alert[] = [];
@@ -118,7 +128,7 @@ export const fetchAlertById = async (
     const baseUrl = import.meta.env.VITE_API_BASE_URL;
     const url = `${baseUrl.replace(/\/$/, "")}/alerts/${id}/`;
 
-    const res = await fetchWithRetry(url);
+    const res = await fetchWithRetry(url, { headers: await authHeaders() });
     const text = await res.text();
 
     const data = text ? JSON.parse(text) : null;

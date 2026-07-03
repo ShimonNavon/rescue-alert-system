@@ -1,5 +1,6 @@
 import firebase_admin.auth
 from django.contrib.auth.models import User
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -7,6 +8,9 @@ from .models import UserProfile
 
 
 class FirebaseAuthentication(BaseAuthentication):
+    def authenticate_header(self, request):
+        return 'Bearer'
+
     def authenticate(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header.startswith('Bearer '):
@@ -42,3 +46,15 @@ class FirebaseAuthentication(BaseAuthentication):
         UserProfile.objects.get_or_create(user=user)
 
         return (user, token)
+
+
+class FirebaseAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class = 'alerts.authentication.FirebaseAuthentication'
+    name = 'bearerAuth'
+
+    def get_security_definition(self, auto_schema):
+        return {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'Firebase ID Token',
+        }

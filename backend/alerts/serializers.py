@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import Alert, DeviceRegistration, UserProfile, Group, Message, Notification
@@ -49,6 +50,15 @@ class MessageSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'timestamp', 'sender']
 
+    @extend_schema_field({
+        'type': 'object',
+        'properties': {
+            'id': {'type': 'integer'},
+            'username': {'type': 'string'},
+            'email': {'type': 'string', 'format': 'email'},
+            'role': {'type': 'string', 'nullable': True},
+        },
+    })
     def get_sender(self, obj):
         profile = getattr(obj.sender, "userprofile", None)
         return {
@@ -58,6 +68,7 @@ class MessageSerializer(serializers.ModelSerializer):
             "role": profile.role if profile else None,
         }
 
+    @extend_schema_field({'type': 'string', 'format': 'uri', 'nullable': True})
     def get_voice_url(self, obj):
         if obj.voice_file:
             return obj.voice_file.url

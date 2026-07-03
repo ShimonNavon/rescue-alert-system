@@ -3,6 +3,7 @@ import math
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -29,6 +30,13 @@ def _firebase_uid_from_request(request):
 
 
 class RegisterDeviceView(APIView):
+    @extend_schema(
+        request=DeviceRegistrationSerializer,
+        responses={
+            204: OpenApiResponse(description='Device registered'),
+            401: OpenApiResponse(description='Missing or invalid Firebase token'),
+        },
+    )
     def post(self, request):
         uid = _firebase_uid_from_request(request)
         if not uid:

@@ -1,19 +1,59 @@
 {
   "info": {
-    "name": "Rescue Alert System",
-    "description": "Complete API reference for the Rescue Alert System backend.\n\n**Authentication:** All endpoints require a Firebase ID Token sent as a Bearer token:\n```\nAuthorization: Bearer <firebase_id_token>\n```\nObtain an ID token from the Firebase SDK (`user.getIdToken()`) or via the Firebase REST API. Set the `firebase_token` collection variable before sending any request.\n\nSet `base_url` to your server (e.g. `http://localhost:8000`).",
+    "name": "Rescue Alert System — Production",
+    "description": "Production API reference for the Rescue Alert System.\n\n## Authentication\nAll endpoints (except Firebase Auth) require a Firebase ID Token as a Bearer token:\n```\nAuthorization: Bearer <firebase_id_token>\n```\n\n**Quick start:**\n1. Set `firebase_api_key`, `user_email`, and `user_password` in collection variables.\n2. Run **Firebase Auth → Sign In** — it automatically saves the token to `firebase_token`.\n3. All other requests inherit the Bearer token from the collection.\n\nTokens expire after **1 hour**. Re-run Sign In to refresh.\n\n## Variables\n| Variable | Description |\n|---|---|\n| `base_url` | Production API base URL |\n| `firebase_api_key` | Firebase Web API key (from Firebase console → Project Settings) |\n| `user_email` | Email of the Firebase user to authenticate as |\n| `user_password` | Password of that Firebase user |\n| `firebase_token` | ID token — **auto-set by Sign In request** |\n| `alert_id` | Alert ID for detail/update/delete requests |\n| `user_id` | UserProfile ID for detail/update/delete requests |\n| `group_id` | Group ID for detail/update/delete requests |\n| `message_id` | Message ID for detail/update/delete requests |\n| `notification_id` | Notification token record ID |\n\n## Notes\n- Django user accounts are created automatically on first authenticated request — no separate registration step.\n- `sender` on messages and `user` on notifications are set automatically from the authenticated token; do not include them in request bodies.\n- `voice_file` uploads use `multipart/form-data`; do not set `Content-Type` manually — Postman adds the boundary automatically.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:8000",
-      "description": "Base URL of the backend server"
+      "value": "https://rescue-alert-system-malachim-badrachim.navonsimon.com",
+      "description": "Production base URL"
+    },
+    {
+      "key": "firebase_api_key",
+      "value": "",
+      "description": "Firebase Web API key — Firebase console → Project Settings → General → Web API Key"
+    },
+    {
+      "key": "user_email",
+      "value": "",
+      "description": "Email of the Firebase user to sign in as"
+    },
+    {
+      "key": "user_password",
+      "value": "",
+      "description": "Password of the Firebase user"
     },
     {
       "key": "firebase_token",
       "value": "",
-      "description": "Firebase ID Token — obtain via user.getIdToken() in the Firebase SDK or the Firebase REST Auth API"
+      "description": "Firebase ID token — auto-set by the Sign In request. Valid for 1 hour."
+    },
+    {
+      "key": "alert_id",
+      "value": "1",
+      "description": "Alert ID used in detail, update, and delete requests"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "description": "UserProfile ID used in detail, update, and delete requests"
+    },
+    {
+      "key": "group_id",
+      "value": "1",
+      "description": "Group ID used in detail, update, and delete requests"
+    },
+    {
+      "key": "message_id",
+      "value": "1",
+      "description": "Message ID used in detail, update, and delete requests"
+    },
+    {
+      "key": "notification_id",
+      "value": "1",
+      "description": "Notification token record ID"
     }
   ],
   "auth": {
@@ -28,8 +68,127 @@
   },
   "item": [
     {
+      "name": "Firebase Auth",
+      "description": "Obtain a Firebase ID token. Run Sign In first to populate `firebase_token` — all other folders inherit it automatically.\n\nTokens expire after 1 hour. Re-run Sign In to get a fresh one.\n\nIf your Firebase project has Email/Password auth disabled, obtain the token from the mobile app via `user.getIdToken()` and paste it into the `firebase_token` variable manually.",
+      "item": [
+        {
+          "name": "Sign In (Email + Password)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.idToken) {",
+                  "    pm.collectionVariables.set('firebase_token', r.idToken);",
+                  "    console.log('firebase_token saved. Expires in: ' + r.expiresIn + 's');",
+                  "} else {",
+                  "    console.error('Sign in failed:', JSON.stringify(r));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\",\n  \"returnSecureToken\": true\n}"
+            },
+            "url": {
+              "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{firebase_api_key}}",
+              "protocol": "https",
+              "host": ["identitytoolkit", "googleapis", "com"],
+              "path": ["v1", "accounts:signInWithPassword"],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{firebase_api_key}}",
+                  "description": "Firebase Web API key"
+                }
+              ]
+            },
+            "description": "Signs in a Firebase user with email and password. On success the test script automatically saves `idToken` to the `firebase_token` collection variable so all subsequent requests are authenticated.\n\nRequires Email/Password sign-in enabled in Firebase console → Authentication → Sign-in providers."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"kind\": \"identitytoolkit#VerifyPasswordResponse\",\n  \"localId\": \"<firebase_uid>\",\n  \"email\": \"user@example.com\",\n  \"displayName\": \"\",\n  \"idToken\": \"<firebase_id_token>\",\n  \"registered\": true,\n  \"refreshToken\": \"<refresh_token>\",\n  \"expiresIn\": \"3600\"\n}"
+            },
+            {
+              "name": "400 Invalid credentials",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"INVALID_LOGIN_CREDENTIALS\",\n    \"errors\": [{ \"message\": \"INVALID_LOGIN_CREDENTIALS\", \"domain\": \"global\", \"reason\": \"invalid\" }]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.id_token) {",
+                  "    pm.collectionVariables.set('firebase_token', r.id_token);",
+                  "    console.log('firebase_token refreshed.');",
+                  "} else {",
+                  "    console.error('Refresh failed:', JSON.stringify(r));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "refresh_token" },
+                { "key": "refresh_token", "value": "<paste_refresh_token_from_sign_in_response>" }
+              ]
+            },
+            "url": {
+              "raw": "https://securetoken.googleapis.com/v1/token?key={{firebase_api_key}}",
+              "protocol": "https",
+              "host": ["securetoken", "googleapis", "com"],
+              "path": ["v1", "token"],
+              "query": [
+                { "key": "key", "value": "{{firebase_api_key}}" }
+              ]
+            },
+            "description": "Use the `refresh_token` from a previous Sign In response to get a new `id_token` without re-entering credentials. The test script auto-saves the new token to `firebase_token`.\n\nUseful for long-running test sessions where the 1-hour token has expired."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"access_token\": \"<new_id_token>\",\n  \"expires_in\": \"3600\",\n  \"token_type\": \"Bearer\",\n  \"refresh_token\": \"<new_refresh_token>\",\n  \"id_token\": \"<new_id_token>\",\n  \"user_id\": \"<firebase_uid>\",\n  \"project_id\": \"<firebase_project_id>\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Alerts",
-      "description": "Create and manage rescue alerts. All endpoints require a Firebase Bearer token.",
+      "description": "Create and manage rescue alerts. All requests inherit the collection Bearer token.\n\n**Status values:** `OPEN` → `DISPATCHED` → `ACCEPTED` → `IN_PROGRESS` → `RESOLVED` / `CANCELLED`\n\n**Priority values:** `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`\n\n**Coordinates:** `latitude` must be −90 to 90, `longitude` must be −180 to 180. Both must be provided together on updates.",
       "item": [
         {
           "name": "List Alerts",
@@ -40,14 +199,21 @@
               "host": ["{{base_url}}"],
               "path": ["api", "alerts", ""]
             },
-            "description": "Returns all alerts ordered by newest first."
+            "description": "Returns all alerts ordered by newest first (`-created_at`)."
           },
           "response": [
             {
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Fire on Main St\",\n    \"description\": \"Building fire, multiple floors\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"status\": \"OPEN\",\n    \"priority\": \"CRITICAL\",\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\"\n  }\n]"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Fire on Main St\",\n    \"description\": \"Building fire, multiple floors\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.006,\n    \"status\": \"OPEN\",\n    \"priority\": \"CRITICAL\",\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\"\n  }\n]"
+            },
+            {
+              "name": "401 Unauthorized — missing or expired token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"detail\": \"Authentication credentials were not provided.\"\n}"
             }
           ]
         },
@@ -60,21 +226,27 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060,\n  \"status\": \"OPEN\",\n  \"priority\": \"CRITICAL\"\n}"
+              "raw": "{\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"status\": \"OPEN\",\n  \"priority\": \"CRITICAL\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/alerts/",
               "host": ["{{base_url}}"],
               "path": ["api", "alerts", ""]
             },
-            "description": "Create a new alert.\n\n**status options:** `OPEN`, `DISPATCHED`, `ACCEPTED`, `IN_PROGRESS`, `RESOLVED`, `CANCELLED`\n\n**priority options:** `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`"
+            "description": "Create a new alert. `status` defaults to `OPEN`, `priority` defaults to `MEDIUM` if omitted."
           },
           "response": [
             {
               "name": "201 Created",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 1,\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060,\n  \"status\": \"OPEN\",\n  \"priority\": \"CRITICAL\",\n  \"created_at\": \"2024-01-15T10:30:00Z\",\n  \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"status\": \"OPEN\",\n  \"priority\": \"CRITICAL\",\n  \"created_at\": \"2024-01-15T10:30:00Z\",\n  \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request — validation error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"latitude\": [\"Latitude must be between -90 and 90.\"],\n  \"longitude\": [\"Longitude must be between -180 and 180.\"]\n}"
             }
           ]
         },
@@ -83,9 +255,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/alerts/1/",
+              "raw": "{{base_url}}/api/alerts/{{alert_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "alerts", "1", ""]
+              "path": ["api", "alerts", "{{alert_id}}", ""]
             },
             "description": "Retrieve a single alert by ID."
           },
@@ -94,7 +266,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060,\n  \"status\": \"OPEN\",\n  \"priority\": \"CRITICAL\",\n  \"created_at\": \"2024-01-15T10:30:00Z\",\n  \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"status\": \"OPEN\",\n  \"priority\": \"CRITICAL\",\n  \"created_at\": \"2024-01-15T10:30:00Z\",\n  \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
             },
             {
               "name": "404 Not Found",
@@ -113,14 +285,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060,\n  \"status\": \"DISPATCHED\",\n  \"priority\": \"CRITICAL\"\n}"
+              "raw": "{\n  \"title\": \"Fire on Main St\",\n  \"description\": \"Building fire, multiple floors affected\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"status\": \"DISPATCHED\",\n  \"priority\": \"CRITICAL\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/alerts/1/",
+              "raw": "{{base_url}}/api/alerts/{{alert_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "alerts", "1", ""]
+              "path": ["api", "alerts", "{{alert_id}}", ""]
             },
-            "description": "Replace all fields on an alert."
+            "description": "Replace all fields on an alert. All fields including `latitude` and `longitude` are required."
           }
         },
         {
@@ -132,24 +304,32 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"RESOLVED\"\n}"
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/alerts/1/",
+              "raw": "{{base_url}}/api/alerts/{{alert_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "alerts", "1", ""]
+              "path": ["api", "alerts", "{{alert_id}}", ""]
             },
-            "description": "Update one or more fields on an alert without replacing the whole object."
-          }
+            "description": "Update one or more fields. If updating coordinates, `latitude` and `longitude` must both be present — providing only one returns a 400."
+          },
+          "response": [
+            {
+              "name": "400 — partial coordinate update rejected",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"non_fields_error\": [\"Both latitude and longitude must be provided together.\"]\n}"
+            }
+          ]
         },
         {
           "name": "Delete Alert",
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/api/alerts/1/",
+              "raw": "{{base_url}}/api/alerts/{{alert_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "alerts", "1", ""]
+              "path": ["api", "alerts", "{{alert_id}}", ""]
             },
             "description": "Permanently delete an alert."
           },
@@ -167,23 +347,43 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/alerts/nearby/?lat=40.7128&lon=-74.0060&radius=5000",
+              "raw": "{{base_url}}/api/alerts/nearby/?lat=40.7128&lon=-74.006&radius=5000",
               "host": ["{{base_url}}"],
               "path": ["api", "alerts", "nearby", ""],
               "query": [
-                { "key": "lat", "value": "40.7128", "description": "Latitude of center point" },
-                { "key": "lon", "value": "-74.0060", "description": "Longitude of center point" },
-                { "key": "radius", "value": "5000", "description": "Search radius in meters" }
+                { "key": "lat", "value": "40.7128", "description": "Latitude of center point (float, required)" },
+                { "key": "lon", "value": "-74.006", "description": "Longitude of center point (float, required)" },
+                { "key": "radius", "value": "5000", "description": "Search radius in meters (integer, required)" }
               ]
             },
-            "description": "Returns all alerts within `radius` meters of the given coordinates (`lat`, `lon`). All three query params are required."
-          }
+            "description": "Returns all alerts within `radius` meters of the given coordinates. All three query params are required. Uses Euclidean approximation (`lat_diff * 111000` and `lon_diff * 111000 * cos(lat)`)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Fire on Main St\",\n    \"description\": \"Building fire\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.006,\n    \"status\": \"OPEN\",\n    \"priority\": \"CRITICAL\",\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\"\n  }\n]"
+            },
+            {
+              "name": "400 — missing params",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"lat, lon, and radius query parameters are required\"\n}"
+            },
+            {
+              "name": "400 — invalid param types",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"lat and lon must be floats, radius must be an integer\"\n}"
+            }
+          ]
         }
       ]
     },
     {
       "name": "User Profiles",
-      "description": "Manage user profiles and locations. All endpoints require a Firebase Bearer token.\n\nNote: Django user accounts are created automatically on first login via Firebase — there is no separate registration endpoint.",
+      "description": "Manage user profiles and locations. Django accounts are created automatically on first Firebase-authenticated request — there is no separate registration endpoint.\n\n**Role values:** `user` (default), `rescuer`, `admin`\n\nProfile fields exposed: `id`, `username` (Firebase UID), `email`, `role`, `latitude`, `longitude`.",
       "item": [
         {
           "name": "List All User Profiles",
@@ -201,7 +401,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.006\n  }\n]"
             }
           ]
         },
@@ -214,7 +414,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "profile", ""]
             },
-            "description": "Returns the profile of the currently authenticated user."
+            "description": "Returns the profile of the currently authenticated user (derived from the Bearer token)."
           },
           "response": [
             {
@@ -226,18 +426,6 @@
           ]
         },
         {
-          "name": "Get User Profile by ID",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/user/1/",
-              "host": ["{{base_url}}"],
-              "path": ["api", "user", "1", ""]
-            },
-            "description": "Returns the profile of a specific user by their profile ID."
-          }
-        },
-        {
           "name": "Update My Profile",
           "request": {
             "method": "PUT",
@@ -246,15 +434,29 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
+              "raw": "{\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/user/update_profile/",
               "host": ["{{base_url}}"],
               "path": ["api", "user", "update_profile", ""]
             },
-            "description": "Update the authenticated user's own profile.\n\n**role options:** `user`, `admin`, `rescuer`"
-          }
+            "description": "Update the authenticated user's own profile. Acts as a partial update internally — omitted fields are unchanged."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"username\": \"<firebase_uid>\",\n  \"email\": \"jdoe@example.com\",\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"role\": [\"This field may not be blank.\"]\n}"
+            }
+          ]
         },
         {
           "name": "Update My Location",
@@ -265,15 +467,29 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
+              "raw": "{\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/user/location/",
               "host": ["{{base_url}}"],
               "path": ["api", "user", "location", ""]
             },
-            "description": "Update the authenticated user's current GPS coordinates."
-          }
+            "description": "Update the authenticated user's current GPS coordinates. Both `latitude` and `longitude` are required."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"username\": \"<firebase_uid>\",\n  \"email\": \"jdoe@example.com\",\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006\n}"
+            },
+            {
+              "name": "400 — missing coordinates",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"latitude and longitude required\"\n}"
+            }
+          ]
         },
         {
           "name": "Get All Users with Coordinates",
@@ -284,7 +500,27 @@
               "host": ["{{base_url}}"],
               "path": ["api", "user", "all", ""]
             },
-            "description": "Returns all user profiles that have a non-null latitude and longitude. Useful for rendering users on a map."
+            "description": "Returns only users that have a non-null `latitude` and `longitude`. Use this to render active users on a map."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.006\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get User Profile by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/user/{{user_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user", "{{user_id}}", ""]
+            },
+            "description": "Returns the profile of a specific user by their UserProfile `id`."
           }
         },
         {
@@ -296,14 +532,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
+              "raw": "{\n  \"role\": \"rescuer\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/user/1/",
+              "raw": "{{base_url}}/api/user/{{user_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "user", "1", ""]
+              "path": ["api", "user", "{{user_id}}", ""]
             },
-            "description": "Replace all fields on a specific user profile by ID (admin use)."
+            "description": "Replace all fields on a specific user profile. Admin use."
           }
         },
         {
@@ -318,11 +554,11 @@
               "raw": "{\n  \"role\": \"admin\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/user/1/",
+              "raw": "{{base_url}}/api/user/{{user_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "user", "1", ""]
+              "path": ["api", "user", "{{user_id}}", ""]
             },
-            "description": "Partially update a specific user profile by ID (admin use)."
+            "description": "Partially update a specific user profile by ID. Admin use."
           }
         },
         {
@@ -330,11 +566,11 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/api/user/1/",
+              "raw": "{{base_url}}/api/user/{{user_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "user", "1", ""]
+              "path": ["api", "user", "{{user_id}}", ""]
             },
-            "description": "Permanently delete a user profile."
+            "description": "Permanently delete a user profile and its associated Django user."
           },
           "response": [
             {
@@ -349,7 +585,7 @@
     },
     {
       "name": "Groups",
-      "description": "Create and manage user groups. All endpoints require a Firebase Bearer token.",
+      "description": "Create and manage user groups (response teams). Group names must be unique. `members` is an array of Django user IDs (the `id` field from UserProfile responses).",
       "item": [
         {
           "name": "List Groups",
@@ -387,7 +623,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "group", ""]
             },
-            "description": "Create a new group. `members` is an array of Django user IDs. Group names must be unique."
+            "description": "Create a new group. `members` is an array of Django User IDs. `members` can be an empty array."
           },
           "response": [
             {
@@ -395,6 +631,12 @@
               "status": "Created",
               "code": 201,
               "body": "{\n  \"id\": 1,\n  \"name\": \"Alpha Response Team\",\n  \"members\": [1, 2, 3]\n}"
+            },
+            {
+              "name": "400 — duplicate name",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"name\": [\"group with this name already exists.\"]\n}"
             }
           ]
         },
@@ -403,12 +645,20 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/group/1/",
+              "raw": "{{base_url}}/api/group/{{group_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "group", "1", ""]
+              "path": ["api", "group", "{{group_id}}", ""]
             },
             "description": "Retrieve a single group by ID."
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Alpha Response Team\",\n  \"members\": [1, 2, 3]\n}"
+            }
+          ]
         },
         {
           "name": "Update Group (Full)",
@@ -422,11 +672,11 @@
               "raw": "{\n  \"name\": \"Alpha Response Team\",\n  \"members\": [1, 2, 3, 4]\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/group/1/",
+              "raw": "{{base_url}}/api/group/{{group_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "group", "1", ""]
+              "path": ["api", "group", "{{group_id}}", ""]
             },
-            "description": "Replace all fields on a group."
+            "description": "Replace all fields on a group. The `members` list replaces the existing members entirely."
           }
         },
         {
@@ -441,9 +691,9 @@
               "raw": "{\n  \"name\": \"Bravo Response Team\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/group/1/",
+              "raw": "{{base_url}}/api/group/{{group_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "group", "1", ""]
+              "path": ["api", "group", "{{group_id}}", ""]
             },
             "description": "Partially update a group."
           }
@@ -453,11 +703,11 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/api/group/1/",
+              "raw": "{{base_url}}/api/group/{{group_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "group", "1", ""]
+              "path": ["api", "group", "{{group_id}}", ""]
             },
-            "description": "Permanently delete a group."
+            "description": "Permanently delete a group. Does not delete the member users."
           },
           "response": [
             {
@@ -480,11 +730,11 @@
               "raw": "{\n  \"user_id\": 5\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/group/1/add_user/",
+              "raw": "{{base_url}}/api/group/{{group_id}}/add_user/",
               "host": ["{{base_url}}"],
-              "path": ["api", "group", "1", "add_user", ""]
+              "path": ["api", "group", "{{group_id}}", "add_user", ""]
             },
-            "description": "Add a user to an existing group by Django user ID."
+            "description": "Add a user to an existing group. `user_id` is the Django User ID (the `id` from a UserProfile response, not the Firebase UID)."
           },
           "response": [
             {
@@ -513,11 +763,11 @@
               "raw": "{\n  \"user_id\": 5\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/group/1/remove_user/",
+              "raw": "{{base_url}}/api/group/{{group_id}}/remove_user/",
               "host": ["{{base_url}}"],
-              "path": ["api", "group", "1", "remove_user", ""]
+              "path": ["api", "group", "{{group_id}}", "remove_user", ""]
             },
-            "description": "Remove a user from a group by Django user ID."
+            "description": "Remove a user from a group. `user_id` is the Django User ID. Does not delete the user."
           },
           "response": [
             {
@@ -538,7 +788,7 @@
     },
     {
       "name": "Messages",
-      "description": "Send and retrieve messages. Supports text and voice attachments. All endpoints require a Firebase Bearer token.\n\nThe `sender` field is set automatically from the authenticated Firebase user.",
+      "description": "Send and retrieve field messages. Supports text-only or text + voice file attachment.\n\n`sender` is set automatically from the authenticated token — do not include it in request bodies.\n\nVoice files are served from `/media/voices/` and accessible via the `voice_url` field in responses.",
       "item": [
         {
           "name": "List Messages",
@@ -549,14 +799,14 @@
               "host": ["{{base_url}}"],
               "path": ["api", "message", ""]
             },
-            "description": "Returns all messages."
+            "description": "Returns all messages (default ordering)."
           },
           "response": [
             {
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"sender\": {\n      \"id\": 1,\n      \"username\": \"<firebase_uid>\",\n      \"email\": \"jdoe@example.com\",\n      \"role\": \"rescuer\"\n    },\n    \"title\": \"Evacuation Update\",\n    \"text\": \"Sector 3 is clear.\",\n    \"voice_url\": null,\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"timestamp\": \"2024-01-15T10:35:00Z\"\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"sender\": {\n      \"id\": 1,\n      \"username\": \"<firebase_uid>\",\n      \"email\": \"jdoe@example.com\",\n      \"role\": \"rescuer\"\n    },\n    \"title\": \"Evacuation Update\",\n    \"text\": \"Sector 3 is clear.\",\n    \"voice_file\": null,\n    \"voice_url\": null,\n    \"latitude\": 40.7128,\n    \"longitude\": -74.006,\n    \"timestamp\": \"2024-01-15T10:35:00Z\"\n  }\n]"
             }
           ]
         },
@@ -569,7 +819,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "message", "list_messages", ""]
             },
-            "description": "Returns all messages ordered by timestamp descending (newest first)."
+            "description": "Returns all messages ordered by `timestamp` descending (newest first). Prefer this over the plain list endpoint."
           }
         },
         {
@@ -581,21 +831,21 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Sector 3 is clear. All units proceed to sector 4.\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
+              "raw": "{\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Sector 3 is clear. All units proceed to sector 4.\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/message/",
               "host": ["{{base_url}}"],
               "path": ["api", "message", ""]
             },
-            "description": "Create a text message. `sender` is set automatically from the authenticated user. `latitude`, `longitude`, and `text` are optional."
+            "description": "Create a text message. `text`, `latitude`, and `longitude` are optional. `sender` is set from the token."
           },
           "response": [
             {
               "name": "201 Created",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 1,\n  \"sender\": {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\"\n  },\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Sector 3 is clear. All units proceed to sector 4.\",\n  \"voice_url\": null,\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060,\n  \"timestamp\": \"2024-01-15T10:35:00Z\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"sender\": {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\"\n  },\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Sector 3 is clear. All units proceed to sector 4.\",\n  \"voice_file\": null,\n  \"voice_url\": null,\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"timestamp\": \"2024-01-15T10:35:00Z\"\n}"
             }
           ]
         },
@@ -607,10 +857,10 @@
               "mode": "formdata",
               "formdata": [
                 { "key": "title", "value": "Voice Update", "type": "text" },
-                { "key": "text", "value": "See attached audio", "type": "text", "description": "Optional" },
+                { "key": "text", "value": "See attached audio.", "type": "text", "description": "Optional" },
                 { "key": "latitude", "value": "40.7128", "type": "text", "description": "Optional" },
-                { "key": "longitude", "value": "-74.0060", "type": "text", "description": "Optional" },
-                { "key": "voice_file", "type": "file", "src": "", "description": "Audio file attachment" }
+                { "key": "longitude", "value": "-74.006", "type": "text", "description": "Optional" },
+                { "key": "voice_file", "type": "file", "src": "", "description": "Audio file (mp3, wav, m4a, etc.)" }
               ]
             },
             "url": {
@@ -618,17 +868,25 @@
               "host": ["{{base_url}}"],
               "path": ["api", "message", ""]
             },
-            "description": "Create a message with a voice file attachment. Use `multipart/form-data` (do not set Content-Type manually — Postman sets it automatically with the boundary). The response includes a `voice_url` pointing to the uploaded file."
-          }
+            "description": "Create a message with a voice file attachment. Use `multipart/form-data` — **do not set `Content-Type` manually**, Postman adds the boundary automatically. The response includes `voice_url` pointing to the uploaded file under `/media/voices/`."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 2,\n  \"sender\": {\n    \"id\": 1,\n    \"username\": \"<firebase_uid>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\"\n  },\n  \"title\": \"Voice Update\",\n  \"text\": \"See attached audio.\",\n  \"voice_file\": \"voices/update.mp3\",\n  \"voice_url\": \"https://rescue-alert-system-malachim-badrachim.navonsimon.com/media/voices/update.mp3\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"timestamp\": \"2024-01-15T10:36:00Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Get Message",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/message/1/",
+              "raw": "{{base_url}}/api/message/{{message_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "message", "1", ""]
+              "path": ["api", "message", "{{message_id}}", ""]
             },
             "description": "Retrieve a single message by ID."
           }
@@ -642,14 +900,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Updated: Sector 3 and 4 are clear.\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.0060\n}"
+              "raw": "{\n  \"title\": \"Evacuation Update\",\n  \"text\": \"Updated: Sector 3 and 4 are clear.\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/message/1/",
+              "raw": "{{base_url}}/api/message/{{message_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "message", "1", ""]
+              "path": ["api", "message", "{{message_id}}", ""]
             },
-            "description": "Replace all fields on a message."
+            "description": "Replace all writable fields on a message. `sender` and `timestamp` are read-only and ignored."
           }
         },
         {
@@ -664,9 +922,9 @@
               "raw": "{\n  \"text\": \"Updated message content.\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/message/1/",
+              "raw": "{{base_url}}/api/message/{{message_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "message", "1", ""]
+              "path": ["api", "message", "{{message_id}}", ""]
             },
             "description": "Partially update a message."
           }
@@ -676,11 +934,11 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/api/message/1/",
+              "raw": "{{base_url}}/api/message/{{message_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "message", "1", ""]
+              "path": ["api", "message", "{{message_id}}", ""]
             },
-            "description": "Permanently delete a message."
+            "description": "Permanently delete a message and its associated voice file."
           },
           "response": [
             {
@@ -695,10 +953,10 @@
     },
     {
       "name": "Device Registration",
-      "description": "Register a mobile device for Firebase Cloud Messaging (FCM) push notifications. Requires a Firebase Bearer token.",
+      "description": "Register a mobile device for Firebase Cloud Messaging (FCM) push notifications.\n\nThis is the **preferred** endpoint for new integrations. It supports multiple devices per user, platform tagging, and upserts on re-registration (same `firebase_uid` + `device_id` pair updates the `fcm_token`).\n\nAuthentication is handled by reading the Bearer token directly — not via DRF's `IsAuthenticated`, so a Firebase token must still be provided.",
       "item": [
         {
-          "name": "Register Device",
+          "name": "Register / Update Device",
           "request": {
             "method": "POST",
             "header": [
@@ -706,30 +964,30 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fcm_token\": \"<firebase_cloud_messaging_token>\",\n  \"device_id\": \"unique-device-identifier\",\n  \"platform\": \"android\",\n  \"device_model\": \"Samsung Galaxy S21\"\n}"
+              "raw": "{\n  \"fcm_token\": \"<firebase_cloud_messaging_token>\",\n  \"device_id\": \"unique-device-identifier\",\n  \"platform\": \"android\",\n  \"device_model\": \"Samsung Galaxy S24\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/notifications/token",
               "host": ["{{base_url}}"],
               "path": ["api", "notifications", "token"]
             },
-            "description": "Register or update a mobile device for push notifications.\n\n**platform options:** `android`, `ios`, `other`\n\n**device_model:** Optional. Human-readable device name.\n\nIf the same `device_id` is already registered for this Firebase user, the `fcm_token` is updated (upsert). Returns 204 on success."
+            "description": "Register or update a device for push notifications.\n\n**Required fields:** `fcm_token`, `device_id`, `platform`\n\n**platform options:** `android`, `ios`, `other`\n\n**device_model:** Optional. Human-readable device name.\n\nIf the same `device_id` is already registered for this Firebase user the `fcm_token` is updated (upsert). Returns 204 on success."
           },
           "response": [
             {
-              "name": "204 No Content",
+              "name": "204 No Content — registered or updated",
               "status": "No Content",
               "code": 204,
               "body": ""
             },
             {
-              "name": "400 Bad Request",
+              "name": "400 Bad Request — missing required fields",
               "status": "Bad Request",
               "code": 400,
               "body": "{\n  \"fcm_token\": [\"This field is required.\"],\n  \"device_id\": [\"This field is required.\"],\n  \"platform\": [\"This field is required.\"]\n}"
             },
             {
-              "name": "401 Unauthorized",
+              "name": "401 Unauthorized — invalid or missing token",
               "status": "Unauthorized",
               "code": 401,
               "body": "{\n  \"error\": \"Unauthorized\"\n}"
@@ -740,7 +998,7 @@
     },
     {
       "name": "Notifications (Legacy)",
-      "description": "Simple push notification token store. All endpoints require a Firebase Bearer token.\n\nNote: For new integrations prefer the **Device Registration** endpoint which supports multi-device per user, platform tagging, and FCM upsert.",
+      "description": "Simple push notification token store. One token per record, not per device.\n\n**Prefer Device Registration** for new integrations — it supports multi-device per user and FCM upsert.\n\n`user` is set automatically from the authenticated token and is read-only.",
       "item": [
         {
           "name": "List Notification Tokens",
@@ -751,7 +1009,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "notification", ""]
             },
-            "description": "Returns all registered notification tokens."
+            "description": "Returns all registered notification token records."
           },
           "response": [
             {
@@ -778,7 +1036,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "notification", ""]
             },
-            "description": "Register a push notification token for the authenticated user. Tokens must be unique."
+            "description": "Register a push notification token. `user` is set from the token. Tokens must be globally unique — re-registering the same token returns 400."
           },
           "response": [
             {
@@ -786,6 +1044,12 @@
               "status": "Created",
               "code": 201,
               "body": "{\n  \"id\": 1,\n  \"user\": 1,\n  \"token\": \"<fcm_token_string>\"\n}"
+            },
+            {
+              "name": "400 — duplicate token",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"token\": [\"notification with this token already exists.\"]\n}"
             }
           ]
         },
@@ -794,9 +1058,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/notification/1/",
+              "raw": "{{base_url}}/api/notification/{{notification_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "notification", "1", ""]
+              "path": ["api", "notification", "{{notification_id}}", ""]
             },
             "description": "Retrieve a single notification token record by ID."
           }
@@ -813,11 +1077,11 @@
               "raw": "{\n  \"token\": \"<new_fcm_token_string>\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/notification/1/",
+              "raw": "{{base_url}}/api/notification/{{notification_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "notification", "1", ""]
+              "path": ["api", "notification", "{{notification_id}}", ""]
             },
-            "description": "Update a notification token."
+            "description": "Update a notification token record with a new FCM token."
           }
         },
         {
@@ -825,9 +1089,9 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/api/notification/1/",
+              "raw": "{{base_url}}/api/notification/{{notification_id}}/",
               "host": ["{{base_url}}"],
-              "path": ["api", "notification", "1", ""]
+              "path": ["api", "notification", "{{notification_id}}", ""]
             },
             "description": "Remove a notification token record."
           },

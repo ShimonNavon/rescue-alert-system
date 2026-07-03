@@ -32,6 +32,7 @@ ALLOWED_HOSTS = config(
 INSTALLED_APPS = [
     'django.contrib.gis',
     'rest_framework',
+    'drf_spectacular',
     'corsheaders',
     'alerts',
     'django.contrib.admin',
@@ -146,6 +147,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Rescue Alert System API',
+    'DESCRIPTION': (
+        'Production API for the Rescue Alert System.\n\n'
+        '**How to authenticate:**\n'
+        '1. Go to `/get-token.html` and sign in with Google\n'
+        '2. Copy the token\n'
+        '3. Click **Authorize** below, paste the token, click **Authorize**\n\n'
+        'Token expires after 1 hour — repeat to refresh.'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 

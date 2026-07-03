@@ -29,6 +29,24 @@ def _firebase_uid_from_request(request):
         return None
 
 
+class WhoAmIView(APIView):
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description='Token accepted — returns your identity'),
+            401: OpenApiResponse(description='Missing, expired, or invalid Firebase token'),
+        },
+        description='Test endpoint: send your Firebase ID token as '
+                    '`Authorization: Bearer <token>` to check that authentication works.',
+    )
+    def get(self, request):
+        return Response({
+            'authenticated': True,
+            'firebase_uid': request.user.username,
+            'email': request.user.email,
+            'name': request.user.get_full_name(),
+        })
+
+
 class RegisterDeviceView(APIView):
     @extend_schema(
         request=DeviceRegistrationSerializer,

@@ -1,3 +1,5 @@
+import logging
+
 import firebase_admin.auth
 from django.contrib.auth.models import User
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
@@ -5,6 +7,8 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
 from .models import UserProfile
+
+logger = logging.getLogger(__name__)
 
 
 class FirebaseAuthentication(BaseAuthentication):
@@ -23,7 +27,8 @@ class FirebaseAuthentication(BaseAuthentication):
             raise AuthenticationFailed('Firebase token has expired.')
         except firebase_admin.auth.InvalidIdTokenError:
             raise AuthenticationFailed('Firebase token is invalid.')
-        except Exception:
+        except Exception as exc:
+            logger.exception('Firebase token verification failed: %s', exc)
             raise AuthenticationFailed('Firebase token could not be verified.')
 
         uid = decoded['uid']

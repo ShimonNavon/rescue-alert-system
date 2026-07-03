@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    AlertViewSet, RegisterDeviceView,
+    AlertViewSet, RegisterDeviceView, WhoAmIView,
     UserProfileViewSet, GroupViewSet, MessageViewSet, NotificationViewSet,
 )
 
@@ -15,4 +15,5 @@ router.register(r"notification", NotificationViewSet, basename="notification")
 
 urlpatterns = router.urls + [
     path('notifications/token', RegisterDeviceView.as_view(), name='register-device'),
+    path('auth/whoami/', WhoAmIView.as_view(), name='whoami'),
 ]

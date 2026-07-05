@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ title|default:"Swagger" }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if favicon_href %}<link rel="icon" href="{{ favicon_href }}">{% endif %}
+    <link rel="stylesheet" href="{{ swagger_ui_css }}">
+    <style>
+      html { box-sizing: border-box; overflow-y: scroll; }
+      *, *:after, *:before { box-sizing: inherit; }
+      body { background: #fafafa; margin: 0; }
+
+      /* ── Get Token banner ── */
+      #get-token-banner {
+        background: #1e1e2e;
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        font-family: sans-serif;
+      }
+      #get-token-banner .banner-label {
+        color: #cbd5e1;
+        font-size: 14px;
+      }
+      #get-token-banner .banner-label strong {
+        color: #f8fafc;
+      }
+      #get-token-btn {
+        background: #dc2626;
+        color: #fff;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: 0.02em;
+        transition: background 0.15s;
+      }
+      #get-token-btn:hover { background: #b91c1c; }
+
+      /* ── TEST section: red tag header ── */
+      .opblock-tag[data-tag="TEST"] {
+        background: #fff0f0 !important;
+        border-bottom: 2px solid #dc2626 !important;
+        border-radius: 4px !important;
+      }
+      .opblock-tag[data-tag="TEST"] a,
+      .opblock-tag[data-tag="TEST"] span {
+        color: #dc2626 !important;
+        font-weight: 700 !important;
+      }
+      .opblock-tag[data-tag="TEST"] small {
+        color: #9f1239 !important;
+      }
+      /* Red border on the whoami operation card */
+      .opblock-tag-section .opblock-get {
+        border-color: #dc2626;
+      }
+      /* Only target operations inside the TEST tag */
+      #operations-tag-TEST ~ .opblock-get,
+      .opblock-tag-section:has(.opblock-tag[data-tag="TEST"]) .opblock-get {
+        border-left: 4px solid #dc2626 !important;
+      }
+      .opblock-tag-section:has(.opblock-tag[data-tag="TEST"]) .opblock-summary-get {
+        background: #fef2f2 !important;
+      }
+      .opblock-tag-section:has(.opblock-tag[data-tag="TEST"]) .opblock-summary-method {
+        background: #dc2626 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="get-token-banner">
+      <span class="banner-label">🔑 <strong>Step 1:</strong> Get a Firebase token before testing any endpoint</span>
+      <a id="get-token-btn" href="https://rescue-alert-system-malachim-badrachim.navonsimon.com/get-token.html" target="_blank" rel="noopener">
+        &#x1F511; Get Token
+      </a>
+    </div>
+
+    <div id="swagger-ui"></div>
+    <script src="{{ swagger_ui_bundle }}"></script>
+    <script src="{{ swagger_ui_standalone }}"></script>
+    {% if script_url %}
+    <script src="{{ script_url }}"></script>
+    {% else %}
+    <script>
+    {% include template_name_js %}
+    </script>
+    {% endif %}
+  </body>
+</html>

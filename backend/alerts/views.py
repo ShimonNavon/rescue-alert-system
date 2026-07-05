@@ -31,12 +31,18 @@ def _firebase_uid_from_request(request):
 
 class WhoAmIView(APIView):
     @extend_schema(
+        tags=['TEST'],
+        summary='Verify your token works (start here)',
         responses={
             200: OpenApiResponse(description='Token accepted — returns your identity'),
             401: OpenApiResponse(description='Missing, expired, or invalid Firebase token'),
         },
-        description='Test endpoint: send your Firebase ID token as '
-                    '`Authorization: Bearer <token>` to check that authentication works.',
+        description=(
+            '**Use this before testing anything else.**\n\n'
+            'Send your Firebase ID token as `Authorization: Bearer <token>`. '
+            'If you get a 200 back with your email, you are authenticated and ready to test all other endpoints.\n\n'
+            'If you get 401, your token is missing, expired, or invalid — go back to `/get-token.html` and get a fresh one.'
+        ),
     )
     def get(self, request):
         return Response({

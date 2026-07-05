@@ -59,7 +59,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -155,13 +155,32 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': (
         'Production API for the Rescue Alert System.\n\n'
         '**How to authenticate:**\n'
-        '1. Go to `/get-token.html` and sign in with Google\n'
-        '2. Copy the token\n'
+        '1. Click the **Get Token** button at the top of the page\n'
+        '2. Sign in with Google and copy the token\n'
         '3. Click **Authorize** below, paste the token, click **Authorize**\n\n'
         'Token expires after 1 hour — repeat to refresh.'
     ),
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'TAGS': [
+        {
+            'name': 'TEST',
+            'description': (
+                '🔴 **Start here.** Use `GET /api/auth/whoami/` to confirm your token is valid '
+                'before calling any other endpoint. A 200 response means you are authenticated.'
+            ),
+        },
+        {'name': 'alerts', 'description': 'Create and retrieve fire/rescue alerts.'},
+        {'name': 'user', 'description': 'User profiles and location updates.'},
+        {'name': 'group', 'description': 'Rescue groups and membership.'},
+        {'name': 'message', 'description': 'In-app messages between users.'},
+        {'name': 'notification', 'description': 'Push notification records.'},
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'tagsSorter': None,
+        'persistAuthorization': True,
+        'deepLinking': True,
+    },
 }
 
 

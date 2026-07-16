@@ -18,4 +18,4 @@ backend/firebase-service-account.json
 # Admin panel (Node.js)
 admin-panel/node_modules/
 admin-panel/dist/
-admin-panel/.env
+admin-panel/.env._*

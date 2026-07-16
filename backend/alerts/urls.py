@@ -15,5 +15,6 @@ router.register(r"notification", NotificationViewSet, basename="notification")
 
 urlpatterns = router.urls + [
     path('notifications/token', RegisterDeviceView.as_view(), name='register-device'),
+    path('notifications/token/', RegisterDeviceView.as_view(), name='register-device-slash'),
     path('auth/whoami/', WhoAmIView.as_view(), name='whoami'),
 ]

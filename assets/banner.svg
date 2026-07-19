@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#20090b"/>
+      <stop offset="1" stop-color="#3d1214"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="260" fill="url(#bg)"/>
+  <g transform="translate(1020 130)" fill="none">
+    <circle r="26" stroke="#f87171" stroke-width="4"/>
+    <circle r="52" stroke="#f87171" stroke-opacity="0.5" stroke-width="3"/>
+    <circle r="78" stroke="#f87171" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M0 -12 v14 M0 8 v4" stroke="#fca5a5" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <g fill="#fbbf24">
+    <path d="M880 190 l10 -22 8 22 z"/><path d="M905 195 l8 -18 7 18 z"/>
+  </g>
+  <text x="80" y="102" font-family="'Segoe UI', -apple-system, sans-serif" font-size="46" font-weight="bold" fill="#fef2f2">Rescue Alert System</text>
+  <text x="82" y="142" font-family="'Segoe UI', -apple-system, sans-serif" font-size="20" fill="#fca5a5">Real-time, location-based volunteer dispatch — מלאכים בדרכים</text>
+  <text x="82" y="196" font-family="'Segoe UI', -apple-system, sans-serif" font-size="15" fill="#c98a8a">MIT open source · Django · mobile app · admin panel · Jenkins CI</text>
+  <rect x="80" y="156" width="46" height="3" fill="#f87171"/>
+</svg>

@@ -167,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.settings),
-            title: const Text('settings'),
+            title: const Text('הגדרות'),
             onTap: () {
               Navigator.pop(context);
               Navigator.of(context).push(
@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.person),
-            title: const Text('user details'),
+            title: const Text('פרטי משתמש'),
             onTap: () {
               Navigator.pop(context);
               Navigator.of(context).push(
@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.info),
-            title: const Text('about'),
+            title: const Text('אודות'),
             onTap: () {
               Navigator.pop(context);
               Navigator.of(context).push(
@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(
-              'logout',
+              'התנתקות',
               style: TextStyle(
                 color: Colors.red,
                 fontWeight: FontWeight.bold,

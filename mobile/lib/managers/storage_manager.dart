@@ -108,7 +108,7 @@ class StorageManager {
         IdentityUserData(
           email: email,
           accessToken: token,
-          activeBillingAccount: existingIdentity.activeBillingAccount ?? false,
+          activeBillingAccount: existingIdentity.activeBillingAccount,
           isAdmin: existingIdentity.isAdmin,
         ),
       );

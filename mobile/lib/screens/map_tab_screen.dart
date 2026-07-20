@@ -182,7 +182,6 @@ class _MapTabScreenState extends State<MapTabScreen> {
     _mapboxMap = mapboxMap;
     _applySavedCamera();
     _applyHebrewLabels();
-    MapboxMapsOptions.setLanguage('he');
     _initUserMarkers();
   }
 

@@ -44,8 +44,8 @@ class CallService {
       handle: number,
       type: 0, // 0 = audio
       duration: 30000, // ms auto-reject timeout
-      textAccept: 'Accept',
-      textDecline: 'Decline',
+      // textAccept: 'Accept',
+      // textDecline: 'Decline',
       missedCallNotification: const NotificationParams(
         showNotification: true,
         isShowCallback: true,
@@ -192,36 +192,40 @@ class CallService {
   // ── Private ───────────────────────────────────────────────────────────────
 
   void _onCallkitEvent(CallEvent? event) {
-    if (event == null) return;
-    debugPrint('[CallService] event: ${event.event} body: ${event.body}');
+    if (event == null) {
+      return;
+    }
 
-    switch (event.event) {
-      case Event.actionCallIncoming:
+    debugPrint(
+        '[CallService] event: ${event.eventName} body: ${event.toString()}');
+
+    switch (event.eventName) {
+      case CallEventConstants.actionCallIncoming:
         // Already handled in simulateIncomingCall
         break;
 
-      case Event.actionCallAccept:
-        final id = event.body['id'] as String? ?? '';
-        _updateCallState(id, CallState.active);
+      case CallEventConstants.actionCallAccept:
+        // final id = event.eventName['id'] as String? ?? '';
+        // _updateCallState(id, CallState.active);
         WakelockPlus.enable();
         break;
 
-      case Event.actionCallDecline:
-        final id = event.body['id'] as String? ?? '';
-        _updateCallState(id, CallState.ended);
+      case CallEventConstants.actionCallDecline:
+        // final id = event.body['id'] as String? ?? '';
+        // _updateCallState(id, CallState.ended);
         _clearCall();
         break;
 
-      case Event.actionCallEnded:
+      case CallEventConstants.actionCallEnded:
         _clearCall();
         WakelockPlus.disable();
         break;
 
-      case Event.actionCallTimeout:
+      case CallEventConstants.actionCallTimeout:
         _clearCall();
         break;
 
-      case Event.actionDidUpdateDevicePushTokenVoip:
+      case CallEventConstants.actionDidUpdateDevicePushTokenVoip:
         // Handle VOIP push token refresh
         break;
 

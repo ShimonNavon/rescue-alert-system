@@ -107,7 +107,7 @@ class NotificationService {
     );
     const iosSettings = DarwinInitializationSettings();
     await _localNotifications.initialize(
-      const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (details) {
         if (details.payload != null) {
           _deepLinkService.setPendingRoute(details.payload!);
@@ -143,10 +143,10 @@ class NotificationService {
 
     final route = _routeFromData(message.data);
     _localNotifications.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      NotificationDetails(
+      id: notification.hashCode,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _androidChannel.id,
           _androidChannel.name,

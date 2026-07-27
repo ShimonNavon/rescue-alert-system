@@ -30,11 +30,11 @@ dependencies:
   flutter_secure_storage: ^10.0.0
   firebase_core: ^4.12.1
   firebase_auth: ^6.5.6
-  mapbox_maps_flutter: ^2.22.0
+  mapbox_maps_flutter: ^2.26.0
   geolocator: ^14.0.2
   flutter_dotenv: ^5.2.1
   rflutter_alert: ^2.0.7
-  flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^22.1.0
   app_links: ^7.0.0
   audioplayers: ^6.6.0
   record: ^6.2.0

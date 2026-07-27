@@ -1,11 +1,11 @@
-import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:rescue_app/constants/app_env.dart';
 import 'package:rescue_app/managers/storage_manager.dart';
+import 'package:rescue_app/models/alert_message.dart';
 import 'package:rescue_app/models/app_message.dart';
+import 'package:rescue_app/models/user_details.dart';
 import 'package:rescue_app/models/user_group.dart';
 import 'package:rescue_app/models/user_location.dart';
 
@@ -202,7 +202,8 @@ class RestApiService {
         return;
       }
 
-      await _dio.post('/api/group/$groupId/add_user/', data: {'user_id': userId});
+      await _dio
+          .post('/api/group/$groupId/add_user/', data: {'user_id': userId});
     } on DioException catch (e) {
       debugPrint('addUserToGroup error: ${e.message}');
       return;
@@ -221,7 +222,8 @@ class RestApiService {
         return;
       }
 
-      await _dio.delete('/api/group/$groupId/remove_user/', data: {'user_id': userId});
+      await _dio.delete('/api/group/$groupId/remove_user/',
+          data: {'user_id': userId});
     } on DioException catch (e) {
       debugPrint('removeUserFromGroup error: ${e.message}');
       return;
@@ -358,6 +360,12 @@ class RestApiService {
     return _asMap(response.data);
   }
 
+  Future<List<UserDetails>> getAllUsers() async {
+    final response = await _safeGet('/api/user/');
+    final userList = _asList(response.data);
+    return userList.map((json) => UserDetails.fromJson(json)).toList();
+  }
+
   Future<Map<String, dynamic>> getUserProfile(int id) async {
     final response = await _safeGet('/api/user/$id/');
     return _asMap(response.data);
@@ -413,10 +421,10 @@ class RestApiService {
     return _asMap(response.data);
   }
 
-  Future<List<dynamic>> listUsersWithCoordinates() async {
-    final response = await _safeGet('/api/user/all/');
-    return _asList(response.data);
-  }
+  // Future<List<dynamic>> listUsersWithCoordinates() async {
+  //   final response = await _safeGet('/api/user/all/');
+  //   return _asList(response.data);
+  // }
 
   Future<Map<String, dynamic>> getCurrentUserProfile() async {
     final response = await _safeGet('/api/user/profile/');
@@ -638,9 +646,12 @@ class RestApiService {
     await _safeDelete('/api/notification/$id/');
   }
 
-  Future<List<dynamic>> listAlerts() async {
+  Future<List<AlertMessage>> getAllAlerts() async {
     final response = await _safeGet('/api/alerts/');
-    return _asList(response.data);
+    final alertsResult = _asList(response.data);
+    final alerts =
+        alertsResult.map((json) => AlertMessage.fromJson(json)).toList();
+    return alerts;
   }
 
   Future<Map<String, dynamic>> createAlert({

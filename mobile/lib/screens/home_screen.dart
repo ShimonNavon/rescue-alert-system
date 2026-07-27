@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rescue_app/domain/services/api/rest_api_service.dart';
 import 'package:rescue_app/managers/storage_manager.dart';
+import 'package:rescue_app/repositories/location_repository.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:rescue_app/constants/asset_paths.dart';
 import 'event_tab_screen.dart';
@@ -24,6 +25,18 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    LocationRepository().startTracking();
+  }
+
+  @override
+  void dispose() {
+    LocationRepository().stopTracking();
+    super.dispose();
+  }
 
   static const List<String> _titles = <String>[
     'משתמשים',
@@ -224,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future testApi() async {
     RestApiService api = RestApiService();
     try {
-      final users = await api.listUsersWithCoordinates();
+      final users = await api.getAllUsersLocation();
       print('users with coordinates: $users');
     } catch (e) {
       print('error fetching user details: $e');

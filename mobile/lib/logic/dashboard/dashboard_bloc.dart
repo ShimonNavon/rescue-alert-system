@@ -136,7 +136,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardUploadLocationRequested event,
     Emitter<DashboardState> emit,
   ) async {
-    await _locationRepository.publishCurrentLocation();
+    await _locationRepository.startTracking();
     emit(state.copyWith(status: 'Location uploaded'));
   }
 

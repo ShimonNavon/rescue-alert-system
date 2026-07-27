@@ -169,10 +169,12 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00E5FF).withOpacity(0.12),
+                          color:
+                              const Color(0xFF00E5FF).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color(0xFF00E5FF).withOpacity(0.3),
+                            color:
+                                const Color(0xFF00E5FF).withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -226,7 +228,8 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF00E5FF).withOpacity(0.35),
+                              color: const Color(0xFF00E5FF)
+                                  .withValues(alpha: 0.35),
                               blurRadius: 30,
                               spreadRadius: 5,
                             ),
@@ -264,7 +267,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                     Text(
                       widget.call.callerNumber,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.55),
+                        color: Colors.white.withValues(alpha: 0.55),
                         fontSize: 17,
                         letterSpacing: 1,
                       ),
@@ -278,14 +281,14 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                       children: [
                         Icon(
                           Icons.radio_outlined,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                           size: 14,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'Push-to-Talk',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 13,
                             letterSpacing: 1,
                           ),
@@ -310,7 +313,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                     Text(
                       'or swipe up to answer',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         fontSize: 12,
                         letterSpacing: 0.5,
                       ),
@@ -351,7 +354,7 @@ class _PulseRing extends AnimatedWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: color.withOpacity(opacity),
+          color: color.withValues(alpha: opacity),
           width: 1.5,
         ),
       ),
@@ -387,10 +390,10 @@ class _CallActionBar extends StatelessWidget {
         // Secondary actions (speaker preview)
         _CircleButton(
           onTap: () {},
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
           icon: Icons.volume_up_rounded,
           label: 'Speaker',
-          iconColor: Colors.white.withOpacity(0.5),
+          iconColor: Colors.white.withValues(alpha: 0.5),
           size: 56,
         ),
 
@@ -438,7 +441,7 @@ class _CircleButton extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.4),
+                  color: color.withValues(alpha: 0.4),
                   blurRadius: 20,
                   spreadRadius: 2,
                 ),
@@ -451,7 +454,7 @@ class _CircleButton extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.65),
+            color: Colors.white.withValues(alpha: 0.65),
             fontSize: 12,
             letterSpacing: 0.5,
           ),
@@ -467,7 +470,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF00E5FF).withOpacity(0.025)
+      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.025)
       ..strokeWidth = 0.5;
 
     const spacing = 32.0;
@@ -482,7 +485,7 @@ class _GridPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height * 0.4);
     final gradient = RadialGradient(
       colors: [
-        const Color(0xFF00E5FF).withOpacity(0.04),
+        const Color(0xFF00E5FF).withValues(alpha: 0.04),
         Colors.transparent,
       ],
       radius: 0.7,

@@ -15,7 +15,7 @@
             "name": "iOS-Simulator (Production)",
             "request": "launch",
             "type": "dart",
-            "deviceId": "4884212F-242E-4AF8-A9F0-370D28B0B807",
+            "deviceId": "092165C1-249B-46B5-9231-93C3925549B0",
             "program": "lib/main.dart",
         },
         {

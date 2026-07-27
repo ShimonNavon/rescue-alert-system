@@ -150,8 +150,10 @@ class _ActiveCallScreenState extends ConsumerState<ActiveCallScreen>
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: isActive
-                                ? const Color(0xFF00C853).withOpacity(0.12)
-                                : const Color(0xFFFFB300).withOpacity(0.12),
+                                ? const Color(0xFF00C853)
+                                    .withValues(alpha: 0.12)
+                                : const Color(0xFFFFB300)
+                                    .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -191,7 +193,7 @@ class _ActiveCallScreenState extends ConsumerState<ActiveCallScreen>
                           Text(
                             _elapsedLabel,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               fontFeatures: const [
@@ -219,7 +221,7 @@ class _ActiveCallScreenState extends ConsumerState<ActiveCallScreen>
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF00E5FF)
-                              .withOpacity(_isTransmitting ? 0.5 : 0.2),
+                              .withValues(alpha: _isTransmitting ? 0.5 : 0.2),
                           blurRadius: _isTransmitting ? 40 : 20,
                           spreadRadius: _isTransmitting ? 4 : 0,
                         ),
@@ -253,7 +255,7 @@ class _ActiveCallScreenState extends ConsumerState<ActiveCallScreen>
                   Text(
                     _call.callerNumber,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 14,
                     ),
                   ),
@@ -272,11 +274,12 @@ class _ActiveCallScreenState extends ConsumerState<ActiveCallScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF00E5FF).withOpacity(0.1),
+                            color:
+                                const Color(0xFF00E5FF).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFF00E5FF)
-                                  .withOpacity(0.3 + _receiveCtrl.value * 0.3),
+                              color: const Color(0xFF00E5FF).withValues(
+                                  alpha: 0.3 + _receiveCtrl.value * 0.3),
                             ),
                           ),
                           child: Row(
@@ -321,7 +324,7 @@ class _ActiveCallScreenState extends ConsumerState<ActiveCallScreen>
                       style: TextStyle(
                         color: _isTransmitting
                             ? const Color(0xFFFF6B35)
-                            : Colors.white.withOpacity(0.4),
+                            : Colors.white.withValues(alpha: 0.4),
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 3,
@@ -403,7 +406,7 @@ class _PTTButton extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: const Color(0xFFFF6B35)
-                              .withOpacity((1 - pulseCtrl.value) * 0.5),
+                              .withValues(alpha: (1 - pulseCtrl.value) * 0.5),
                           width: 2,
                         ),
                       ),
@@ -432,7 +435,7 @@ class _PTTButton extends StatelessWidget {
                         color: (isTransmitting
                                 ? const Color(0xFFFF6B35)
                                 : const Color(0xFF00E5FF))
-                            .withOpacity(isTransmitting ? 0.6 : 0.25),
+                            .withValues(alpha: isTransmitting ? 0.6 : 0.25),
                         blurRadius: isTransmitting ? 40 : 20,
                         spreadRadius: isTransmitting ? 4 : 0,
                       ),
@@ -441,7 +444,7 @@ class _PTTButton extends StatelessWidget {
                       color: (isTransmitting
                               ? const Color(0xFFFF8C61)
                               : const Color(0xFF00E5FF))
-                          .withOpacity(0.4),
+                          .withValues(alpha: 0.4),
                       width: 1.5,
                     ),
                   ),
@@ -542,7 +545,7 @@ class _BottomControls extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFE53935).withOpacity(0.4),
+                  color: const Color(0xFFE53935).withValues(alpha: 0.4),
                   blurRadius: 20,
                   spreadRadius: 2,
                 ),
@@ -595,18 +598,19 @@ class _ControlBtn extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: active
-                  ? activeColor.withOpacity(0.15)
-                  : Colors.white.withOpacity(0.07),
+                  ? activeColor.withValues(alpha: 0.15)
+                  : Colors.white.withValues(alpha: 0.07),
               shape: BoxShape.circle,
               border: Border.all(
-                color:
-                    active ? activeColor.withOpacity(0.4) : Colors.transparent,
+                color: active
+                    ? activeColor.withValues(alpha: 0.4)
+                    : Colors.transparent,
                 width: 1,
               ),
             ),
             child: Icon(
               icon,
-              color: active ? activeColor : Colors.white.withOpacity(0.5),
+              color: active ? activeColor : Colors.white.withValues(alpha: 0.5),
               size: 24,
             ),
           ),
@@ -614,7 +618,7 @@ class _ControlBtn extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: active ? activeColor : Colors.white.withOpacity(0.4),
+              color: active ? activeColor : Colors.white.withValues(alpha: 0.4),
               fontSize: 11,
             ),
           ),
@@ -643,7 +647,7 @@ class _WaveformBgPainter extends CustomPainter {
 
     // Subtle grid
     final gridPaint = Paint()
-      ..color = const Color(0xFF00E5FF).withOpacity(0.02)
+      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.02)
       ..strokeWidth = 0.5;
 
     for (double x = 0; x < size.width; x += 28) {
@@ -658,7 +662,7 @@ class _WaveformBgPainter extends CustomPainter {
       ..shader = RadialGradient(
         colors: [
           (transmitting ? const Color(0xFFFF6B35) : const Color(0xFF00E5FF))
-              .withOpacity(0.07),
+              .withValues(alpha: 0.07),
           Colors.transparent,
         ],
       ).createShader(Rect.fromCircle(

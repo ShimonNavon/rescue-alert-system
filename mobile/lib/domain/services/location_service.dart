@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
-  Future<Position?> getCurrentPosition() async {
+  StreamSubscription<Position>? _positionSubscription;
+  Position? _lastPosition;
+
+  Future<Position?> startTracking() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       return null;
@@ -24,5 +29,9 @@ class LocationService {
         distanceFilter: 10,
       ),
     );
+  }
+
+  Future<void> stopTracking() async {
+    await _positionSubscription?.cancel();
   }
 }

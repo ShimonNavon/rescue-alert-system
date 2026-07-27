@@ -50,31 +50,36 @@ class _MapTabScreenState extends State<MapTabScreen> {
     'Light': MapboxStyles.LIGHT,
   };
 
-  static const List<UserCoordinate> _mockUsers = [
-    UserCoordinate(
-        id: 1,
-        latitude: 32.0900,
-        longitude: 34.7850,
-        username: 'Alice',
-        role: 'rescuer'),
-    UserCoordinate(
-        id: 2,
-        latitude: 32.0820,
-        longitude: 34.7780,
-        username: 'Bob',
-        role: 'dispatcher'),
-    UserCoordinate(
-        id: 3,
-        latitude: 32.0760,
-        longitude: 34.7910,
-        username: 'Carol',
-        role: 'rescuer'),
-  ];
+  // final List<UserCoordinate> userCoordinates = [];
+
+  // static const List<UserCoordinate> _mockUsers = [
+  //   UserCoordinate(
+  //       id: 1,
+  //       latitude: 32.0900,
+  //       longitude: 34.7850,
+  //       username: 'Alice',
+  //       role: 'rescuer'),
+  //   UserCoordinate(
+  //       id: 2,
+  //       latitude: 32.0820,
+  //       longitude: 34.7780,
+  //       username: 'Bob',
+  //       role: 'dispatcher'),
+  //   UserCoordinate(
+  //       id: 3,
+  //       latitude: 32.0760,
+  //       longitude: 34.7910,
+  //       username: 'Carol',
+  //       role: 'rescuer'),
+  // ];
+
+  // final users = <UserDetails>[];
 
   bool get _hasToken => _mapboxToken.trim().isNotEmpty;
 
   @override
   void initState() {
+    getUsers();
     super.initState();
     if (_hasToken) {
       MapboxOptions.setAccessToken(_mapboxToken);
@@ -252,22 +257,22 @@ class _MapTabScreenState extends State<MapTabScreen> {
 
     _annotationManager = await map.annotations.createPointAnnotationManager();
 
-    List<UserCoordinate> users;
-    try {
-      final List<dynamic> raw =
-          await RestApiService().listUsersWithCoordinates();
-      users = raw
-          .whereType<Map<String, dynamic>>()
-          .map(UserCoordinate.fromJson)
-          .toList();
-      if (users.isEmpty) {
-        users = _mockUsers;
-      }
-    } catch (_) {
-      users = _mockUsers;
-    }
+    // List<UserCoordinate> users;
+    // try {
+    //   final List<dynamic> raw =
+    //       await RestApiService().listUsersWithCoordinates();
+    //   users = raw
+    //       .whereType<Map<String, dynamic>>()
+    //       .map(UserCoordinate.fromJson)
+    //       .toList();
 
-    await _renderUserMarkers(users);
+    //   await _renderUserMarkers(users);
+    //   // if (users.isEmpty) {
+    //   //   users = userCoordinates;
+    //   // }
+    // } catch (_) {
+    //   // users = userCoordinates;
+    // }
   }
 
   Future<void> _renderUserMarkers(List<UserCoordinate> users) async {
@@ -521,5 +526,11 @@ class _MapTabScreenState extends State<MapTabScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> getUsers() async {
+    final usersResult = await RestApiService().getAllUsers();
+    final coordinateList = usersResult.map((user) => user.coordinates).toList();
+    _renderUserMarkers(coordinateList);
   }
 }

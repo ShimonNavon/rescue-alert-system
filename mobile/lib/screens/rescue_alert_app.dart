@@ -79,10 +79,7 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
       _audioService = AudioService();
       _deviceService = DeviceService();
       _messageRepository = MessageRepository(apiClient: _apiClient);
-      _locationRepository = LocationRepository(
-        apiClient: _apiClient,
-        locationService: _locationService,
-      );
+      _locationRepository = LocationRepository();
       _notificationService = NotificationService(
         authService: _authService,
         deepLinkService: _deepLinkService,

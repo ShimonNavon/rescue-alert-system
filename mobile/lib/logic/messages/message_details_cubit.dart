@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rescue_app/domain/services/audio_service.dart';
-import '../../models/app_message.dart';
+import 'package:rescue_app/models/message.dart';
 import '../../repositories/message_repository.dart';
 
 class MessageDetailsState {
@@ -11,13 +11,13 @@ class MessageDetailsState {
     this.replyPath,
   });
 
-  final AppMessage? message;
+  final Message? message;
   final bool isLoading;
   final String? errorMessage;
   final String? replyPath;
 
   MessageDetailsState copyWith({
-    AppMessage? message,
+    Message? message,
     bool? isLoading,
     String? errorMessage,
     String? replyPath,
@@ -53,7 +53,7 @@ class MessageDetailsCubit extends Cubit<MessageDetailsState> {
   }
 
   Future<void> playMessageAudio() async {
-    final url = state.message?.audioUrl;
+    final url = state.message?.voiceUrl;
     if (url == null || url.isEmpty) {
       return;
     }

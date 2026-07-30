@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:rescue_app/domain/services/api/rest_api_service.dart';
+import 'package:rescue_app/models/message.dart';
 import 'package:rescue_app/widgets/history_list.dart';
 
-class HistoryTabScreen extends StatelessWidget {
+class HistoryTabScreen extends StatefulWidget {
   const HistoryTabScreen({super.key});
+
+  @override
+  State<HistoryTabScreen> createState() => _HistoryTabScreenState();
+}
+
+class _HistoryTabScreenState extends State<HistoryTabScreen> {
+  final List<Message> messages = [];
+
+  @override
+  initState() {
+    getMessages();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,16 +91,31 @@ class HistoryTabScreen extends StatelessWidget {
               Tab(text: 'יומן אירועים'),
             ],
           ),
+          // HistoryList(messages: messages),
           Expanded(
             child: TabBarView(
               children: [
-                HistoryList(items: latelyItems),
-                HistoryList(items: recentItems),
+                HistoryList(messages: messages),
+                HistoryList(messages: messages),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future getMessages() async {
+    RestApiService api = RestApiService();
+    try {
+      final messagesResult = await api.getMessages();
+      print('messages: $messages');
+      setState(() {
+        messages.clear();
+        messages.addAll(messagesResult);
+      });
+    } catch (e) {
+      print('error fetching user details: $e');
+    }
   }
 }

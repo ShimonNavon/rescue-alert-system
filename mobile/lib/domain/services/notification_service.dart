@@ -56,23 +56,6 @@ class NotificationService {
       sound: true,
     );
 
-    if (Platform.isIOS) {
-      // Ensure APNs token exists before getToken()
-      String? apnsToken;
-      for (int i = 0; i < 10; i++) {
-        apnsToken = await messaging.getAPNSToken();
-        if (apnsToken != null) break;
-
-        await Future.delayed(const Duration(seconds: 1));
-      }
-
-      debugPrint('APNS token: $apnsToken');
-
-      if (apnsToken == null) {
-        throw Exception('APNS token not available yet');
-      }
-    }
-
     await messaging.requestPermission(alert: true, badge: true, sound: true);
 
     _tokenRefreshSub = messaging.onTokenRefresh.listen(_registerToken);
@@ -95,25 +78,63 @@ class NotificationService {
   }
 
   Future<void> registerCurrentToken() async {
+    if (Platform.isIOS) {
+      await _waitForApnsToken();
+    }
+
     final token = await FirebaseMessaging.instance.getToken();
     if (token != null) {
       await _registerToken(token);
+      return;
     }
+
+    debugPrint(
+        'FCM token not available yet; will register when Firebase refreshes it.');
+  }
+
+  Future<void> _waitForApnsToken() async {
+    if (!Platform.isIOS) {
+      return;
+    }
+
+    for (int i = 0; i < 10; i++) {
+      final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      if (apnsToken != null) {
+        debugPrint('APNS token: $apnsToken');
+        return;
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    debugPrint('APNS token not available yet; continuing without throwing.');
   }
 
   Future<void> _initLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
-    const iosSettings = DarwinInitializationSettings();
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
     await _localNotifications.initialize(
-      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      settings: const InitializationSettings(
+          android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (details) {
         if (details.payload != null) {
           _deepLinkService.setPendingRoute(details.payload!);
         }
       },
     );
+
+    if (Platform.isIOS) {
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    }
 
     if (Platform.isAndroid) {
       await _localNotifications

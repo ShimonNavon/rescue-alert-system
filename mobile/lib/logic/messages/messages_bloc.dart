@@ -2,9 +2,8 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../models/app_message.dart';
-import '../../repositories/message_repository.dart';
+import 'package:rescue_app/models/message.dart';
+import 'package:rescue_app/repositories/message_repository.dart';
 
 sealed class MessagesEvent extends Equatable {
   const MessagesEvent();
@@ -20,7 +19,7 @@ class MessagesRefreshRequested extends MessagesEvent {}
 class _MessagesUpdated extends MessagesEvent {
   const _MessagesUpdated(this.messages);
 
-  final List<AppMessage> messages;
+  final List<Message> messages;
 
   @override
   List<Object?> get props => [messages];
@@ -33,12 +32,12 @@ class MessagesState extends Equatable {
     this.errorMessage,
   });
 
-  final List<AppMessage> messages;
+  final List<Message> messages;
   final bool isLoading;
   final String? errorMessage;
 
   MessagesState copyWith({
-    List<AppMessage>? messages,
+    List<Message>? messages,
     bool? isLoading,
     String? errorMessage,
   }) {
@@ -55,15 +54,15 @@ class MessagesState extends Equatable {
 
 class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
   MessagesBloc({required MessageRepository messageRepository})
-    : _messageRepository = messageRepository,
-      super(const MessagesState()) {
+      : _messageRepository = messageRepository,
+        super(const MessagesState()) {
     on<MessagesStarted>(_onStarted);
     on<MessagesRefreshRequested>(_onRefresh);
     on<_MessagesUpdated>(_onMessagesUpdated);
   }
 
   final MessageRepository _messageRepository;
-  StreamSubscription<List<AppMessage>>? _messageSub;
+  StreamSubscription<List<Message>>? _messageSub;
 
   Future<void> _onStarted(
     MessagesStarted event,

@@ -1,26 +1,25 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:rescue_app/domain/services/api/rest_api_service.dart';
+import 'package:rescue_app/models/message.dart';
 import 'package:rxdart/rxdart.dart';
-import '../models/app_message.dart';
 
 class MessageRepository {
   MessageRepository({required RestApiService apiClient})
       : _apiClient = apiClient;
 
   final RestApiService _apiClient;
-  final BehaviorSubject<List<AppMessage>> _messageStream =
+  final BehaviorSubject<List<Message>> _messageStream =
       BehaviorSubject.seeded(const []);
 
-  Stream<List<AppMessage>> get messages$ => _messageStream.stream;
+  Stream<List<Message>> get messages$ => _messageStream.stream;
 
   Future<void> refreshMessages() async {
     final messages = await _apiClient.getMessages();
     _messageStream.add(messages);
   }
 
-  Future<AppMessage> getMessageDetails(String id) =>
-      _apiClient.getMessageById(id);
+  Future<Message> getMessageDetails(String id) => _apiClient.getMessageById(id);
 
   Future<void> postMessage({
     required String title,

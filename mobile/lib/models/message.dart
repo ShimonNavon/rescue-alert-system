@@ -23,6 +23,25 @@ class Message {
     required this.timestamp,
   });
 
+  factory Message.empty() {
+    return Message(
+      id: 0,
+      sender: const MessageSender(
+        id: 0,
+        username: '',
+        email: '',
+        role: '',
+      ),
+      title: '',
+      text: '',
+      voiceFile: null,
+      voiceUrl: null,
+      latitude: 0,
+      longitude: 0,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
+
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
       id: json['id'] as int,

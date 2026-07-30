@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:rescue_app/constants/app_env.dart';
 import 'package:rescue_app/managers/storage_manager.dart';
 import 'package:rescue_app/models/alert_message.dart';
-import 'package:rescue_app/models/app_message.dart';
+import 'package:rescue_app/models/message.dart';
 import 'package:rescue_app/models/user_details.dart';
 import 'package:rescue_app/models/user_group.dart';
 import 'package:rescue_app/models/user_location.dart';
@@ -136,7 +136,7 @@ class RestApiService {
     }
   }
 
-  Future<List<AppMessage>> getMessages() async {
+  Future<List<Message>> getMessages() async {
     try {
       if (!await checkDioHeaders()) {
         return [];
@@ -144,7 +144,7 @@ class RestApiService {
 
       final response = await _dio.get('/api/message/');
       final list = (response.data as List<dynamic>? ?? const [])
-          .map((item) => AppMessage.fromJson(item as Map<String, dynamic>))
+          .map((item) => Message.fromJson(item as Map<String, dynamic>))
           .toList();
       return list;
     } on DioException catch (e) {
@@ -233,14 +233,14 @@ class RestApiService {
     }
   }
 
-  Future<AppMessage> getMessageById(String id) async {
+  Future<Message> getMessageById(String id) async {
     try {
       if (!await checkDioHeaders()) {
         return _emptyAppMessage();
       }
 
       final response = await _dio.get('/messages/$id');
-      return AppMessage.fromJson(response.data as Map<String, dynamic>);
+      return Message.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       debugPrint('getMessageById error: ${e.message}');
       return _emptyAppMessage();
@@ -250,14 +250,14 @@ class RestApiService {
     }
   }
 
-  Future<void> postMessage({
+  Future<List<Message>> postMessage({
     required String title,
     required String text,
     Uint8List? voicePayload,
   }) async {
     try {
       if (!await checkDioHeaders()) {
-        return;
+        return const [];
       }
 
       final data = FormData.fromMap({
@@ -269,13 +269,24 @@ class RestApiService {
             filename: 'voice_note.m4a',
           ),
       });
-      await _dio.post('/api/message/', data: data);
+
+      final response = await _dio.post('/api/message/', data: data);
+      if (response.data == null || response.data is! List) {
+        debugPrint('postMessage error: Unexpected response format');
+        return const [];
+      }
+      final messageList = _asList(response.data);
+      final messages = messageList
+          .map((item) => Message.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      return messages;
     } on DioException catch (e) {
       debugPrint('postMessage error: ${e.message}');
-      return;
+      return const [];
     } catch (e) {
       debugPrint('postMessage error: $e');
-      return;
+      return const [];
     }
   }
 
@@ -970,17 +981,8 @@ class RestApiService {
     );
   }
 
-  AppMessage _emptyAppMessage() {
-    return AppMessage(
-      id: '',
-      title: '',
-      text: '',
-      audioUrl: null,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      userMetadata: const <String, dynamic>{},
-      latitude: null,
-      longitude: null,
-    );
+  Message _emptyAppMessage() {
+    return Message.empty();
   }
 
   Map<String, dynamic> _asMap(dynamic data) {

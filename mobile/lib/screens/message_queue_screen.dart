@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../logic/messages/messages_bloc.dart';
-import '../models/app_message.dart';
+import '../models/message.dart';
 import '../repositories/message_repository.dart';
 
 class MessageQueueScreen extends StatelessWidget {
@@ -42,7 +42,7 @@ class MessageQueueScreen extends StatelessWidget {
 class _MessageTile extends StatelessWidget {
   const _MessageTile({required this.message});
 
-  final AppMessage message;
+  final Message message;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class _MessageTile extends StatelessWidget {
       title: Text(message.title),
       subtitle: Text(message.text),
       trailing: Text(
-        '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}',
+        '${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
       ),
       onTap: () => context.push('/messages/${message.id}'),
     );

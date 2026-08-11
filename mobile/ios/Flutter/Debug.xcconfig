@@ -1,2 +1,12 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+
+// Code signing is per-developer, so it is not committed. These are the
+// defaults; they build fine on the simulator, which needs no signing.
+//
+// To run on a physical device, copy Signing.xcconfig.example to
+// Signing.xcconfig (git-ignored) and set your own team and bundle id.
+APP_BUNDLE_ID = com.rescue.alert
+APP_DEVELOPMENT_TEAM =
+
+#include? "Signing.xcconfig"

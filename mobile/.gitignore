@@ -51,3 +51,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Per-developer iOS code signing (team id + bundle id).
+# Copy ios/Flutter/Signing.xcconfig.example to create it.
+ios/Flutter/Signing.xcconfig

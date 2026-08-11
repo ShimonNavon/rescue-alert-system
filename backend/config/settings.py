@@ -26,6 +26,45 @@ ALLOWED_HOSTS = config(
     cast=lambda value: [host.strip() for host in value.split(",")],
 )
 
+# Cookies are only ever sent to clients over HTTPS (TLS terminates at
+# Cloudflare), so marking them secure costs nothing and stops them leaking over
+# a plaintext hop. Overridable so plain-HTTP local development still works.
+SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=not DEBUG, cast=bool)
+CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=not DEBUG, cast=bool)
+
+# Django 4+ validates the Origin header against this list for unsafe methods.
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="",
+    cast=lambda value: [o.strip() for o in value.split(",") if o.strip()],
+)
+
+# DELIBERATELY OFF BY DEFAULT.
+#
+# Enabling either of these on the current infrastructure takes the site down.
+# nginx listens on port 80 only (Cloudflare terminates TLS) and
+# /etc/nginx/snippets/proxy.conf sets `X-Forwarded-Proto $scheme`, which
+# overwrites Cloudflare's "https" with "http". Django would therefore never
+# see a secure request: SECURE_SSL_REDIRECT would redirect forever, and
+# SECURE_HSTS_SECONDS would be served from a origin that believes it is
+# plaintext.
+#
+# To turn these on, first change that snippet to forward the real value:
+#     proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+# then set SECURE_PROXY_SSL_HEADER below and flip these in .env.
+# Note the snippet is shared by every site on the host, so changing it affects
+# more than this project. HSTS in particular is hard to undo once a browser has
+# cached it -- start with a small SECURE_HSTS_SECONDS and raise it.
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False, cast=bool
+)
+SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", default=False, cast=bool)
+
+if config("USE_X_FORWARDED_PROTO", default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # APPLICATION DEFINITION
 
@@ -46,6 +85,10 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # Serves files from STATIC_ROOT under gunicorn, which (unlike runserver)
+    # does not serve static files itself. Must sit directly after
+    # SecurityMiddleware and before everything else.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

@@ -16,6 +16,10 @@ echo "Database ready."
 
 python manage.py migrate --noinput
 
+# gunicorn does not serve static files the way runserver did; whitenoise serves
+# them from STATIC_ROOT, which this populates (needed for the Django admin CSS).
+python manage.py collectstatic --noinput
+
 exec gunicorn config.wsgi:application \
   --bind 0.0.0.0:8000 \
   --workers 3 \

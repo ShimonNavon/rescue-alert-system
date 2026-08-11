@@ -84,10 +84,16 @@ The project is containerized with Docker to make local setup simpler and more co
 git clone https://github.com/ShimonNavon/rescue-alert-system.git
 cd rescue-alert-system
 cp .env.example .env
-docker compose up --build
+docker compose --profile dev up --build
 </pre>
 
+<p>
+The <code>dev</code> profile adds the Vite dev server for the admin panel. Without it (<code>docker compose up --build</code>) only the backend and database start — which is how production runs, since nginx serves the built panel there.
+</p>
+
 <h3>Run Migrations</h3>
+
+<p>The container entrypoint already runs <code>migrate</code> and <code>collectstatic</code> on every start. To run them by hand:</p>
 
 <pre>
 docker compose exec backend python manage.py migrate
@@ -96,8 +102,9 @@ docker compose exec backend python manage.py migrate
 <h3>Service URLs</h3>
 
 <ul>
-  <li><strong>Backend API:</strong> <code>http://127.0.0.1:8000</code></li>
-  <li><strong>Admin Panel:</strong> <code>http://localhost:5173</code></li>
+  <li><strong>Backend API:</strong> <code>http://127.0.0.1:8004</code> (gunicorn on port 8000 inside the container)</li>
+  <li><strong>Admin Panel:</strong> <code>http://localhost:5173</code> (<code>dev</code> profile only)</li>
+  <li><strong>API docs:</strong> <code>http://127.0.0.1:8004/api/docs/</code></li>
 </ul>
 
 <hr>
@@ -121,7 +128,43 @@ npm run dev
 
 <h3>Run with Docker Compose</h3>
 
-<p>The admin panel is included in the Docker Compose stack and starts automatically with <code>docker compose up --build</code>.</p>
+<p>The admin panel lives behind the <code>dev</code> profile: <code>docker compose --profile dev up --build</code>.</p>
+
+<hr>
+
+<h2>🚢 Production Deployment</h2>
+
+<p>
+The stack runs on <code>debian01</code> under <code>/srv/rescue-alert-system</code>. Host nginx (port 80, TLS terminated at Cloudflare) proxies <code>/api/</code> and <code>/admin/</code> to <code>127.0.0.1:8004</code> and serves the built admin panel from <code>admin-panel/dist</code>.
+</p>
+
+<pre>
+git pull
+docker compose up -d --build            # backend + db only, no dev profile
+docker compose run --rm --no-deps admin-panel \
+    sh -c "npm ci && npm run build"     # refresh admin-panel/dist for nginx
+</pre>
+
+<p>
+<strong>The admin panel build is not automatic.</strong> <code>dist/</code> is gitignored, so a <code>git pull</code> alone leaves nginx serving the previous build — rebuild it whenever <code>admin-panel/</code> changes.
+</p>
+
+<h3>Required nginx location</h3>
+
+<p>
+The server block needs a <code>/static/</code> location, otherwise Django admin and DRF static files fall through to the SPA's <code>try_files … /index.html</code> and the admin renders unstyled:
+</p>
+
+<pre>
+location /static/ {
+    proxy_pass http://127.0.0.1:8004;
+    include /etc/nginx/snippets/proxy.conf;
+}
+</pre>
+
+<p>
+HTTPS enforcement (<code>SECURE_SSL_REDIRECT</code>, HSTS) stays off until the shared <code>proxy.conf</code> snippet stops overwriting Cloudflare's <code>X-Forwarded-Proto</code> — see the comment in <code>backend/config/settings.py</code>.
+</p>
 
 <hr>
 

@@ -33,11 +33,31 @@ SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=not DEBUG, cast=
 CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=not DEBUG, cast=bool)
 
 # Django 4+ validates the Origin header against this list for unsafe methods.
+#
+# Leaving it empty broke every session-authenticated POST in production,
+# including the admin login form. TLS terminates at Cloudflare and nginx
+# forwards X-Forwarded-Proto: http (see the note below), so Django believes it
+# is serving plain HTTP and expects "http://<host>" while the browser sends
+# "https://<host>" -- Origin mismatch, 403 "CSRF verification failed".
+#
+# So when the setting is unset we derive it from ALLOWED_HOSTS: every real host
+# is trusted over https. Set CSRF_TRUSTED_ORIGINS explicitly to override.
+def _origins_from_allowed_hosts(hosts):
+    origins = []
+    for host in hosts:
+        if host == "*":
+            # "https://*" is not a valid trusted origin; nothing to derive.
+            continue
+        # Django spells a wildcard subdomain host as ".example.com".
+        origins.append(f"https://*{host}" if host.startswith(".") else f"https://{host}")
+    return origins
+
+
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
     default="",
     cast=lambda value: [o.strip() for o in value.split(",") if o.strip()],
-)
+) or _origins_from_allowed_hosts(ALLOWED_HOSTS)
 
 # DELIBERATELY OFF BY DEFAULT.
 #

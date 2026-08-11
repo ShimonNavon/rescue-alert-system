@@ -239,7 +239,7 @@ class RestApiService {
         return _emptyAppMessage();
       }
 
-      final response = await _dio.get('/messages/$id');
+      final response = await _dio.get('/api/message/$id/');
       return Message.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       debugPrint('getMessageById error: ${e.message}');

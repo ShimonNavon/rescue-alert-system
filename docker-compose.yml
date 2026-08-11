@@ -45,6 +45,11 @@ services:
   admin-panel:
     image: node:lts-alpine
     container_name: rescue_alert_admin
+    # Development only: this is the Vite dev server. In production nginx serves
+    # the built panel from admin-panel/dist, and this container was left running
+    # (and had to be stopped by hand) after every `docker compose up -d`.
+    # Start it with `docker compose --profile dev up`.
+    profiles: ["dev"]
     working_dir: /app
     volumes:
       - ./admin-panel:/app

@@ -6,3 +6,5 @@ psycopg[binary]
 python-decouple
 firebase-admin
 drf-spectacular
+gunicorn
+whitenoise

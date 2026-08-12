@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '631985219642',
     projectId: 'rescue-alert-prod-12345',
     storageBucket: 'rescue-alert-prod-12345.firebasestorage.app',
-    iosBundleId: 'com.rescue.alert',
+    iosBundleId: 'com.rescue_app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -62,7 +62,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '631985219642',
     projectId: 'rescue-alert-prod-12345',
     storageBucket: 'rescue-alert-prod-12345.firebasestorage.app',
-    iosBundleId: 'com.rescue.alert',
+    iosBundleId: 'com.rescue_app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

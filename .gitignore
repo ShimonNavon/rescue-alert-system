@@ -11,6 +11,16 @@ db.sqlite3
 
 # Secrets
 backend/firebase-service-account.json
+*service-account*.json
+firebase-adminsdk-*.json
+*.pem
+*.p8
+*.p12
+*.keystore
+*.jks
+mobile/android/app/google-services.json
+mobile/ios/Runner/GoogleService-Info.plist
+mobile/macos/Runner/GoogleService-Info.plist
 
 # Mac
 .DS_Store
@@ -18,4 +28,4 @@ backend/firebase-service-account.json
 # Admin panel (Node.js)
 admin-panel/node_modules/
 admin-panel/dist/
-admin-panel/.env._*
+.env*.local

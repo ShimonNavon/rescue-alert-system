@@ -9,7 +9,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      # Bound to loopback: Docker's DNAT rules bypass ufw, so "5432:5432"
+      # published this database straight to the internet. The backend reaches
+      # it over the compose network (POSTGRES_HOST=db), not via this mapping.
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,11 +27,17 @@ services:
       dockerfile: backend/Dockerfile
     container_name: rescue_alert_backend
     restart: unless-stopped
-    command: python manage.py runserver 0.0.0.0:8000
+    # entrypoint.sh waits for the database, applies migrations, collects static
+    # files and then serves via gunicorn. The old "runserver" override ran
+    # Django's single-threaded development server in production.
+    command: ["/app/entrypoint.sh"]
     env_file:
       - .env
     ports:
-      - "8004:8000"
+      # nginx runs on the host and proxies to 127.0.0.1:8004, so loopback is
+      # sufficient. Publishing on 0.0.0.0 exposed the app directly, bypassing
+      # both nginx and ufw.
+      - "127.0.0.1:8004:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -36,11 +45,18 @@ services:
   admin-panel:
     image: node:lts-alpine
     container_name: rescue_alert_admin
+    # Development only: this is the Vite dev server. In production nginx serves
+    # the built panel from admin-panel/dist, and this container was left running
+    # (and had to be stopped by hand) after every `docker compose up -d`.
+    # Start it with `docker compose --profile dev up`.
+    profiles: ["dev"]
     working_dir: /app
     volumes:
       - ./admin-panel:/app
     ports:
-      - "5173:5173"
+      # Vite dev server -- local development only. In production nginx serves
+      # the built admin panel from admin-panel/dist.
+      - "127.0.0.1:5173:5173"
     command: sh -c "npm install && npm run dev -- --host"
     environment:
       - VITE_API_BASE_URL=http://localhost:8004/api/

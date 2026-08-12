@@ -1,0 +1,20 @@
+// iOS code signing -- per developer, never committed.
+//
+//   cp Signing.xcconfig.example Signing.xcconfig
+//
+// then fill in your own values below. Signing.xcconfig is git-ignored.
+// You only need this to run on a physical device; the simulator needs no
+// signing and works with the defaults in Debug.xcconfig / Release.xcconfig.
+//
+// APP_DEVELOPMENT_TEAM is your 10-character Apple Developer Team ID. To list
+// the teams your signed-in Apple ID can actually use:
+//
+//   defaults read com.apple.dt.Xcode IDEProvisioningTeams
+//
+// APP_BUNDLE_ID must be an identifier your team is allowed to register.
+// The default (com.rescue.alert) belongs to the upstream team, so you will
+// need your own -- Xcode reports "Failed Registering Bundle Identifier"
+// otherwise. Use reverse-DNS you control, e.g. com.yourname.rescuealert.
+
+APP_DEVELOPMENT_TEAM = YOUR_TEAM_ID
+APP_BUNDLE_ID = com.yourname.rescuealert

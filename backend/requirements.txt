@@ -1,8 +1,0 @@
-Django==6.0.3
-djangorestframework
-djangorestframework-simplejwt
-django-cors-headers
-psycopg[binary]
-python-decouple
-firebase-admin
-gunicorn

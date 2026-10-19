@@ -7,10 +7,18 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppEnv {
   const AppEnv._();
 
-  static String get mapboxAccessToken =>
-      dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
+  static String _value(String key, [String fallback = '']) {
+    try {
+      return dotenv.env[key] ?? fallback;
+    } catch (_) {
+      // The test harness (and a missing .env file) has no initialized dotenv.
+      return fallback;
+    }
+  }
 
-  static String get env => dotenv.env['ENV'] ?? 'staging';
+  static String get mapboxAccessToken => _value('MAPBOX_ACCESS_TOKEN');
+
+  static String get env => _value('ENV', 'staging');
 
   /// Origin of the backend, without the `/api` prefix.
   ///
@@ -20,14 +28,14 @@ class AppEnv {
   /// answers with 404 -- so any trailing `/api` is trimmed here rather than in
   /// the .env files, which are gitignored and differ per machine.
   static String get apiBaseUrl {
-    var base = (dotenv.env['API_BASE_URL'] ?? _defaultApiBaseUrl).trim();
+    var base = _value('API_BASE_URL', _defaultApiBaseUrl).trim();
     base = base.replaceFirst(RegExp(r'/+$'), '');
     base = base.replaceFirst(RegExp(r'/api$'), '');
     return base.replaceFirst(RegExp(r'/+$'), '');
   }
 
   static const String _defaultApiBaseUrl =
-      'https://rescue-alert-system-malachim-badrachim.navonsimon.com';
+      'http://ubuntu03:30093';
 
   static bool get isProduction => env == 'production';
   static bool get isStaging => env == 'staging';

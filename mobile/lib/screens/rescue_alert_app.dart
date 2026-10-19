@@ -61,17 +61,8 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
   }
 
   Future<void> _bootstrap() async {
-    // _authSub = _authService.authStateChanges.listen((user) async {
-    //   if (user == null) return;
-    //   final token = await user.getIdToken();
-    //   if (token != null) {
-    //     await _apiClient.setAccessAuthToken(access: token);
-    //   }
-    //   await _notificationService.registerCurrentToken();
-    // });
-
     try {
-      _authService = AuthService();
+      _authService = AuthService.instance;
       _deepLinkService = DeepLinkService();
       _apiClient = RestApiService();
       _permissionService = PermissionService();
@@ -92,10 +83,6 @@ class _RescueAlertAppState extends State<RescueAlertApp> {
 
       _authSub = _authService.authStateChanges.listen((user) async {
         if (user == null) return;
-        final token = await user.getIdToken();
-        if (token != null) {
-          await _apiClient.setAccessAuthToken(access: token);
-        }
         await _notificationService.registerCurrentToken();
       });
     } catch (e) {

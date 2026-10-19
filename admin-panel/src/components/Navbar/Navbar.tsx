@@ -1,5 +1,5 @@
 import { type FC, useEffect, useState } from "react";
-import { Bell, Menu, Settings, User, X } from "lucide-react";
+import { Bell, LogOut, Menu, Settings, User, X } from "lucide-react";
 import "./Navbar.css";
 import Theme from "../Theme/Theme";
 import UserModal from "../UserModal/UserModal";
@@ -7,15 +7,18 @@ import SettingsModal from "../SettingsModal/SettingsModal";
 import AlertModal from "../AlertModal/AlertModal";
 import myImage from "../../assets/logo.png";
 import { navItems } from "../../data/navItem";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import type { User as UserType } from "../../types/types";
 import { INITIAL_ROWS } from "../../data/initialRows";
+import { useAuth } from "../../context/AuthContext";
 
 type NavbarProps = {
   setWindowOpen: (open: boolean) => void;
 };
 
 const Navbar: FC<NavbarProps> = ({setWindowOpen }) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -62,6 +65,12 @@ const Navbar: FC<NavbarProps> = ({setWindowOpen }) => {
     setMenuOpen(false);
   }
 
+  async function handleLogout() {
+    await logout();
+    setMenuOpen(false);
+    navigate("/");
+  }
+
   return (
     <div className={`navbar-shell ${menuOpen ? "menu-open" : ""}`}>
       <header className="navbar">
@@ -103,6 +112,14 @@ const Navbar: FC<NavbarProps> = ({setWindowOpen }) => {
           >
             <Settings size={18} />
           </button>
+          <button
+            type="button"
+            className="icon nav-desktop-only"
+            aria-label="התנתק"
+            onClick={handleLogout}
+          >
+            <LogOut size={18} />
+          </button>
         </div>
 
         <nav className="nav-center" id="nav-primary" aria-label="ניווט ראשי">
@@ -126,6 +143,9 @@ const Navbar: FC<NavbarProps> = ({setWindowOpen }) => {
             </button>
             <button type="button" className="icon" aria-label="הגדרות" onClick={handleSettingsButtonClick}>
               <Settings size={18} />
+            </button>
+            <button type="button" className="icon" aria-label="התנתק" onClick={handleLogout}>
+              <LogOut size={18} />
             </button>
           </div>
         </nav>

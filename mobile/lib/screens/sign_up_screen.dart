@@ -1,8 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:rescue_app/managers/storage_manager.dart';
+import 'package:rescue_app/domain/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -16,6 +15,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _inviteCodeController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -27,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _inviteCodeController.dispose();
     super.dispose();
   }
 
@@ -41,30 +42,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-      final String email = _emailController.text.trim();
-      final String password = _passwordController.text;
-      final UserCredential credential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
+      await AuthService.instance.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        inviteCode: _inviteCodeController.text.trim(),
       );
-
-      final User? user = credential.user;
-      if (user != null) {
-        await StorageManager.instance.syncFirebaseUser(user);
-      }
 
       if (!mounted) {
         return;
       }
       context.pop();
-    } on FirebaseAuthException catch (error) {
+    } catch (error) {
       setState(() {
-        _errorMessage = error.message ?? 'ההרשמה נכשלה. נסה שוב.';
-      });
-    } catch (_) {
-      setState(() {
-        _errorMessage = 'שגיאה בלתי צפויה. נסה שוב.';
+        _errorMessage = error
+            .toString()
+            .replaceFirst('Bad state: ', '')
+            .replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -121,6 +114,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
+                      controller: _inviteCodeController,
+                      textCapitalization: TextCapitalization.none,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: const InputDecoration(
+                        labelText: 'קוד הזמנה',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if ((value ?? '').trim().isEmpty) {
+                          return 'יש להזין קוד הזמנה';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
@@ -144,8 +154,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         if (text.isEmpty) {
                           return 'יש להזין סיסמה';
                         }
-                        if (text.length < 6) {
-                          return 'לפחות 6 תווים';
+                        if (text.length < 8) {
+                          return 'לפחות 8 תווים';
                         }
                         return null;
                       },

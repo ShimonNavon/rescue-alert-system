@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:rescue_app/constants/app_env.dart';
+import 'package:rescue_app/domain/models/auth_user.dart';
 import 'package:rescue_app/managers/storage_manager.dart';
 import 'package:rescue_app/models/alert_message.dart';
 import 'package:rescue_app/models/message.dart';
@@ -29,16 +29,35 @@ class RestApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final String? storedAuthorization =
-              await StorageManager.instance.authorization();
-
-          if (storedAuthorization != null && storedAuthorization.isNotEmpty) {
-            options.headers['Authorization'] = storedAuthorization;
-          } else if (_accessToken != null && _accessToken!.isNotEmpty) {
+          if (_accessToken != null && _accessToken!.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $_accessToken';
+          } else {
+            final storedAuthorization =
+                await StorageManager.instance.authorization();
+            if (storedAuthorization != null && storedAuthorization.isNotEmpty) {
+              options.headers['Authorization'] = storedAuthorization;
+            }
           }
-
           handler.next(options);
+        },
+        onError: (error, handler) async {
+          final options = error.requestOptions;
+          final path = options.path;
+          final shouldRefresh = error.response?.statusCode == 401 &&
+              options.extra['retried'] != true &&
+              !path.contains('/token/') &&
+              !path.contains('/auth/register/');
+          if (shouldRefresh && await _refreshIfPossible()) {
+            options.extra['retried'] = true;
+            options.headers['Authorization'] = 'Bearer $_accessToken';
+            try {
+              final response = await _dio.fetch<dynamic>(options);
+              return handler.resolve(response);
+            } catch (_) {
+              return handler.next(error);
+            }
+          }
+          handler.next(error);
         },
       ),
     );
@@ -75,17 +94,15 @@ class RestApiService {
   Future<bool> checkDioHeaders() async {
     if (hasDioHeaders()) {
       return true;
-    } else {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        final String? token = await currentUser.getIdToken();
-        if (token != null && token.isNotEmpty) {
-          await setAccessAuthToken(access: token);
-          return true;
-        }
-      }
-      return false;
     }
+
+    final storedAuthorization = await StorageManager.instance.authorization();
+    if (storedAuthorization != null && storedAuthorization.isNotEmpty) {
+      _dio.options.headers['Authorization'] = storedAuthorization;
+      return true;
+    }
+
+    return _refreshIfPossible();
   }
 
   void clearTokens() {
@@ -291,7 +308,7 @@ class RestApiService {
   }
 
   Future<void> registerDevice({
-    required String fcmToken,
+    required String pushToken,
     required String deviceId,
     required String platform,
     required String deviceModel,
@@ -302,7 +319,7 @@ class RestApiService {
       }
 
       await _dio.post('/api/notifications/token', data: {
-        'fcm_token': fcmToken,
+        'push_token': pushToken,
         'device_id': deviceId,
         'platform': platform,
         'device_model': deviceModel,
@@ -320,34 +337,146 @@ class RestApiService {
     required String username,
     required String password,
   }) async {
-    final response = await _safePost(
-      '/api/token/',
-      data: <String, dynamic>{
-        'username': username,
-        'password': password,
-      },
-    );
+    late Response<dynamic> response;
+    try {
+      response = await _dio.post<dynamic>(
+        '/api/token/',
+        data: <String, dynamic>{
+          'username': username,
+          'password': password,
+        },
+      );
+    } on DioException catch (error) {
+      throw StateError(_dioErrorMessage(error));
+    }
 
     final tokens = JwtTokens.fromJson(_asMap(response.data));
-    setAuthToken(access: tokens.access, refresh: tokens.refresh);
+    await setAuthToken(access: tokens.access, refresh: tokens.refresh);
+    await StorageManager.instance.setTokens(
+      access: tokens.access,
+      refresh: tokens.refresh,
+      email: username,
+    );
     return tokens;
   }
 
+  Future<JwtTokens> register({
+    required String email,
+    required String password,
+    String fullName = '',
+    String inviteCode = '',
+  }) async {
+    late Response<dynamic> response;
+    try {
+      response = await _dio.post<dynamic>(
+        '/api/auth/register/',
+        data: <String, dynamic>{
+          'email': email,
+          'password': password,
+          'full_name': fullName,
+          'invite_code': inviteCode,
+        },
+      );
+    } on DioException catch (error) {
+      throw StateError(_dioErrorMessage(error));
+    }
+
+    final data = _asMap(response.data);
+    final tokens = JwtTokens.fromJson(data);
+    await setAuthToken(access: tokens.access, refresh: tokens.refresh);
+    await StorageManager.instance.setTokens(
+      access: tokens.access,
+      refresh: tokens.refresh,
+      email: email,
+    );
+    return tokens;
+  }
+
+  Future<AuthUser> fetchCurrentUser() async {
+    final response = await _safeGet('/api/auth/whoami/');
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
+      throw StateError(_responseError(response));
+    }
+
+    final data = _asMap(response.data);
+    return AuthUser.fromJson(_asMap(data['user']));
+  }
+
   Future<String> refreshAccessToken({String? refreshToken}) async {
-    final token = refreshToken ?? _refreshToken;
+    final token = refreshToken ??
+        _refreshToken ??
+        await StorageManager.instance.getRefreshToken();
     if (token == null || token.isEmpty) {
       throw StateError('No refresh token set. Call obtainToken first.');
     }
 
-    final response = await _safePost(
+    // A bare client avoids running this request through the 401 interceptor.
+    final tokenClient = Dio(BaseOptions(baseUrl: baseUrl));
+    final response = await tokenClient.post<dynamic>(
       '/api/token/refresh/',
       data: <String, dynamic>{'refresh': token},
     );
 
     final data = _asMap(response.data);
     final access = data['access'] as String;
-    _accessToken = access;
+    final nextRefresh = (data['refresh'] as String?) ?? token;
+    await setAuthToken(access: access, refresh: nextRefresh);
+    await StorageManager.instance.setTokens(
+      access: access,
+      refresh: nextRefresh,
+    );
     return access;
+  }
+
+  Future<void> logout() async {
+    final refresh = _refreshToken ??
+        await StorageManager.instance.getRefreshToken();
+    try {
+      await _dio.post('/api/auth/logout/', data: <String, dynamic>{
+        'refresh': refresh ?? '',
+      });
+    } catch (_) {
+      // The local session is cleared even when the server cannot be reached.
+    }
+    clearTokens();
+    await StorageManager.instance.clearTokens();
+  }
+
+  Future<bool> _refreshIfPossible() async {
+    try {
+      await refreshAccessToken();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _dioErrorMessage(DioException error) {
+    final data = error.response?.data;
+    if (data is Map<String, dynamic>) {
+      if (data['detail'] is String) return data['detail'] as String;
+      for (final key in ['non_field_errors', 'email', 'invite_code', 'password']) {
+        if (data[key] is List && (data[key] as List).isNotEmpty) {
+          return (data[key] as List).first.toString();
+        }
+      }
+    }
+    return error.message ?? 'Request failed';
+  }
+
+  String _responseError(Response<dynamic> response) {
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      if (data['detail'] is String) return data['detail'] as String;
+      if (data['error'] is String) return data['error'] as String;
+      if (data['non_field_errors'] is List &&
+          (data['non_field_errors'] as List).isNotEmpty) {
+        return (data['non_field_errors'] as List).first.toString();
+      }
+    }
+    return response.statusMessage ?? 'Request failed (${response.statusCode})';
   }
 
   Future<List<dynamic>> listUsers() async {

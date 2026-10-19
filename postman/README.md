@@ -55,7 +55,7 @@ If your token expires, run **Authentication → Refresh Access Token**.
 | Groups | 7 | Full CRUD + add/remove members |
 | Messages | 8 | Full CRUD + voice attachments + newest-first list |
 | Notifications | 6 | Full CRUD for push tokens |
-| Device Registration | 1 | Firebase mobile device registration |
+| Device Registration | 1 | Mobile device push-token registration |
 
 **35 requests total.**
 
@@ -69,7 +69,7 @@ Most endpoints use **JWT Bearer tokens** (obtained from Login).
 Authorization: Bearer <access_token>
 ```
 
-The **Device Registration** endpoint is the only exception — it uses a **Firebase ID Token** instead of a JWT. See its request description for details.
+All endpoints use the JWT from `POST /api/token/`. The Device Registration endpoint also accepts the same JWT.
 
 **Token lifetime:** 30 days.
 

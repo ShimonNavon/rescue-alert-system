@@ -1,32 +1,53 @@
 import math
 
+from django.contrib.auth import login as django_login, logout as django_logout
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import firebase_admin.auth
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Alert, DeviceRegistration, UserProfile, Group, Message, Notification
 from .serializers import (
     AlertSerializer, DeviceRegistrationSerializer,
     UserProfileSerializer, GroupSerializer, MessageSerializer, NotificationSerializer,
+    RegisterSerializer, SessionLoginSerializer, UserInfoSerializer,
 )
 
 
-def _firebase_uid_from_request(request):
-    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-    if not auth_header.startswith('Bearer '):
-        return None
-    token = auth_header[7:]
-    try:
-        return firebase_admin.auth.verify_id_token(token)['uid']
-    except Exception:
-        return None
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=['auth'],
+        request=RegisterSerializer,
+        responses={201: OpenApiResponse(description='User created; access and refresh tokens returned')},
+        description=(
+            'Create an account and receive a JWT pair immediately. '
+            'An invite code is required when `REGISTRATION_INVITE_CODE` is configured.'
+        ),
+    )
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': UserInfoSerializer(user).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class WhoAmIView(APIView):
@@ -35,46 +56,103 @@ class WhoAmIView(APIView):
         summary='Verify your token works (start here)',
         responses={
             200: OpenApiResponse(description='Token accepted — returns your identity'),
-            401: OpenApiResponse(description='Missing, expired, or invalid Firebase token'),
+            401: OpenApiResponse(description='Missing, expired, or invalid token'),
         },
         description=(
             '**Use this before testing anything else.**\n\n'
-            'Send your Firebase ID token as `Authorization: Bearer <token>`. '
-            'If you get a 200 back with your email, you are authenticated and ready to test all other endpoints.\n\n'
-            'If you get 401, your token is missing, expired, or invalid — go back to `/get-token.html` and get a fresh one.'
+            'Send a JWT as `Authorization: Bearer <access>` or sign in through the web session. '
+            'If you get a 200 back, you are authenticated and ready to test all other endpoints.'
         ),
     )
     def get(self, request):
         return Response({
             'authenticated': True,
-            'firebase_uid': request.user.username,
-            'email': request.user.email,
-            'name': request.user.get_full_name(),
+            'user': UserInfoSerializer(request.user).data,
         })
 
 
-class RegisterDeviceView(APIView):
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class SessionView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(tags=['auth'], responses={200: OpenApiResponse(description='Current session state')})
+    def get(self, request):
+        if request.user.is_authenticated:
+            return Response({
+                'authenticated': True,
+                'user': UserInfoSerializer(request.user).data,
+            })
+        return Response({'authenticated': False, 'user': None})
+
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class SessionLoginView(APIView):
+    permission_classes = [AllowAny]
+
     @extend_schema(
+        tags=['auth'],
+        request=SessionLoginSerializer,
+        responses={200: OpenApiResponse(description='Session established')},
+    )
+    def post(self, request):
+        serializer = SessionLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        django_login(request, user)
+        return Response({
+            'authenticated': True,
+            'user': UserInfoSerializer(user).data,
+        })
+
+
+class SessionLogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(tags=['auth'], responses={204: OpenApiResponse(description='Session closed')})
+    def post(self, request):
+        django_logout(request)
+        return Response(status=204)
+
+
+class JWTLogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['auth'],
+        request=None,
+        responses={205: OpenApiResponse(description='Refresh token blacklisted (if supplied)')},
+    )
+    def post(self, request):
+        token = request.data.get('refresh')
+        if token:
+            try:
+                RefreshToken(token).blacklist()
+            except TokenError:
+                pass
+        return Response(status=205)
+
+
+class RegisterDeviceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['notification'],
         request=DeviceRegistrationSerializer,
         responses={
             204: OpenApiResponse(description='Device registered'),
-            401: OpenApiResponse(description='Missing or invalid Firebase token'),
+            401: OpenApiResponse(description='Missing or invalid token'),
         },
     )
     def post(self, request):
-        uid = _firebase_uid_from_request(request)
-        if not uid:
-            return Response({'error': 'Unauthorized'}, status=401)
-
         serializer = DeviceRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         DeviceRegistration.objects.update_or_create(
-            firebase_uid=uid,
+            user_uid=str(request.user.pk),
             device_id=data['device_id'],
             defaults={
-                'fcm_token': data['fcm_token'],
+                'push_token': data['push_token'],
                 'platform': data['platform'],
                 'device_model': data.get('device_model', ''),
             },

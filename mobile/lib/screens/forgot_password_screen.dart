@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -30,28 +29,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _errorMessage = null;
     });
 
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(
-        email: _emailController.text.trim(),
-      );
-      setState(() {
-        _emailSent = true;
-      });
-    } on FirebaseAuthException catch (error) {
-      setState(() {
-        _errorMessage = error.message ?? 'שליחת האימייל נכשלה. נסה שוב.';
-      });
-    } catch (_) {
-      setState(() {
-        _errorMessage = 'שגיאה בלתי צפויה. נסה שוב.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    // Password resets are handled by an administrator until SMTP is set up.
+    setState(() {
+      _isLoading = false;
+      _emailSent = true;
+    });
   }
 
   @override
@@ -87,7 +69,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'הזן את כתובת האימייל שלך ונשלח לך קישור לאיפוס הסיסמה.',
+            'לאיפוס הסיסמה, פנה למנהל/ת המערכת. ניתן להזין כאן את האימייל לזיהוי.',
             style: TextStyle(fontSize: 14),
           ),
           const SizedBox(height: 24),
@@ -126,7 +108,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('שלח קישור לאיפוס'),
+                  : const Text('הצג הוראות'),
             ),
           ),
         ],
@@ -141,13 +123,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const Icon(Icons.mark_email_read_outlined, size: 64),
         const SizedBox(height: 16),
         const Text(
-          'נשלח אימייל לאיפוס סיסמה!',
+          'פנה למנהל/ת המערכת',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
-          'בדוק את תיבת הדואר שלך בכתובת ${_emailController.text.trim()}',
+          'מנהל/ת המערכת ייצור/תיצור קישור איפוס עבור ${_emailController.text.trim()}.',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 14),
         ),

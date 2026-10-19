@@ -4,6 +4,9 @@
 # Environment files
 .env
 .env.*
+# Deployment endpoints only; no secrets in these two files.
+!.env.staging
+!.env.production
 
 # Firebase platform config (contains real API keys — add your own)
 google-services.json

@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:rescue_app/managers/storage_manager.dart';
+import 'package:rescue_app/domain/models/auth_user.dart';
+import 'package:rescue_app/domain/services/auth_service.dart';
 import 'package:rescue_app/screens/home_screen.dart';
 import 'package:rescue_app/screens/forgot_password_screen.dart';
 import 'package:rescue_app/screens/sign_in_screen.dart';
@@ -50,23 +50,11 @@ class EventDeepLink {
 }
 
 class _GoRouterRefreshStream extends ChangeNotifier {
-  _GoRouterRefreshStream(Stream<User?> stream) {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      unawaited(StorageManager.instance.syncFirebaseUser(currentUser));
-    }
-
-    _subscription = stream.asBroadcastStream().listen((user) async {
-      if (user == null) {
-        await StorageManager.instance.logout();
-      } else {
-        await StorageManager.instance.syncFirebaseUser(user);
-      }
-      notifyListeners();
-    });
+  _GoRouterRefreshStream(Stream<AuthUser?> stream) {
+    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
   }
 
-  late final StreamSubscription<User?> _subscription;
+  late final StreamSubscription<AuthUser?> _subscription;
 
   @override
   void dispose() {
@@ -76,7 +64,7 @@ class _GoRouterRefreshStream extends ChangeNotifier {
 }
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: FirebaseAuth.instance.currentUser == null
+  initialLocation: AuthService.instance.currentUser == null
       ? AppRoutePaths.signIn
       : AppRoutePaths.home,
   routes: <GoRoute>[
@@ -98,7 +86,7 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
   redirect: (context, state) {
-    final bool isLoggedIn = FirebaseAuth.instance.currentUser != null;
+    final bool isLoggedIn = AuthService.instance.currentUser != null;
     final bool isAuthRoute = state.matchedLocation == AppRoutePaths.signIn ||
         state.matchedLocation == AppRoutePaths.signUp ||
         state.matchedLocation == AppRoutePaths.forgotPassword;
@@ -114,6 +102,6 @@ final GoRouter appRouter = GoRouter(
     return null;
   },
   refreshListenable: _GoRouterRefreshStream(
-    FirebaseAuth.instance.authStateChanges(),
+    AuthService.instance.authStateChanges,
   ),
 );

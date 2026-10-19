@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.contrib.gis.geos import Point
 from alerts.models import UserProfile, Group, Message, Alert
-import random
 
 
 class Command(BaseCommand):
@@ -29,7 +29,9 @@ class Command(BaseCommand):
                 user.set_password('test123')
                 user.save()
 
-            profile, created = UserProfile.objects.get_or_create(
+            # A post_save signal already creates the profile, so defaults would
+            # be ignored by get_or_create. Update the role and coordinates.
+            UserProfile.objects.update_or_create(
                 user=user,
                 defaults={
                     'role': user_data['role'],
@@ -52,9 +54,7 @@ class Command(BaseCommand):
             group, created = Group.objects.get_or_create(
                 name=group_data['name']
             )
-            if created:
-                group.members.set(group_data['members'])
-                group.save()
+            group.members.set(group_data['members'])
             groups.append(group)
             self.stdout.write(f'Created group: {group.name}')
 
@@ -68,12 +68,14 @@ class Command(BaseCommand):
         ]
 
         for msg_data in messages_data:
-            message = Message.objects.create(
+            message, created = Message.objects.get_or_create(
                 sender=msg_data['sender'],
                 title=msg_data['title'],
-                text=msg_data['text'],
-                latitude=msg_data['lat'],
-                longitude=msg_data['lon']
+                defaults={
+                    'text': msg_data['text'],
+                    'latitude': msg_data['lat'],
+                    'longitude': msg_data['lon'],
+                }
             )
             self.stdout.write(f'Created message: {message.title}')
 
@@ -85,16 +87,16 @@ class Command(BaseCommand):
         ]
 
         for alert_data in alerts_data:
-            alert = Alert.objects.create(
+            alert, created = Alert.objects.get_or_create(
                 title=alert_data['title'],
-                description=alert_data['description'],
-                latitude=alert_data['lat'],
-                longitude=alert_data['lon'],
-                priority=alert_data['priority'],
-                status=alert_data['status']
+                defaults={
+                    'description': alert_data['description'],
+                    'location': Point(alert_data['lon'], alert_data['lat'], srid=4326),
+                    'priority': alert_data['priority'],
+                    'status': alert_data['status'],
+                }
             )
             self.stdout.write(f'Created alert: {alert.title}')
 
         self.stdout.write(self.style.SUCCESS('Mock data created successfully!'))
         self.stdout.write('Test users: rescuer1, rescuer2, user1, user2, user3 (password: test123)')
-        self.stdout.write('Admin user: admin (password: admin123)')

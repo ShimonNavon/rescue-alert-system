@@ -64,7 +64,8 @@ When an incident occurs, the system identifies nearby available volunteers and a
   <li><strong>Database:</strong> PostgreSQL + PostGIS</li>
   <li><strong>Admin Panel:</strong> React 19 + TypeScript + Vite (web dispatcher dashboard)</li>
   <li><strong>Mobile App:</strong> Flutter</li>
-  <li><strong>Notifications:</strong> Firebase Cloud Messaging (FCM)</li>
+  <li><strong>Authentication:</strong> Django users + JWT (SimpleJWT); session cookies for the web panel</li>
+  <li><strong>Notifications:</strong> in-app records; push delivery is pending a self-hosted ntfy/UnifiedPush setup</li>
   <li><strong>Infrastructure:</strong> Docker + Docker Compose</li>
 </ul>
 
@@ -111,6 +112,22 @@ docker compose exec backend python manage.py migrate
   <li><strong>Admin Panel:</strong> <code>http://localhost:5173</code> (<code>dev</code> profile only)</li>
   <li><strong>API docs:</strong> <code>http://127.0.0.1:8004/api/docs/</code></li>
 </ul>
+
+<hr>
+
+<h2>🧪 Testing</h2>
+
+<p>Run the admin-panel tests/build, mobile analysis/tests, and the live smoke test:</p>
+
+<pre>
+./scripts/test_all.sh
+</pre>
+
+<p>
+Backend tests need Docker and a PostGIS database; run them with
+<code>./scripts/test_backend.sh</code> on a Docker host. The live smoke test targets
+<code>http://ubuntu03:30093</code> by default; override it with <code>BASE_URL</code>.
+</p>
 
 <hr>
 

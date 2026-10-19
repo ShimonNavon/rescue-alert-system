@@ -1,23 +1,26 @@
 import { useState, type FormEvent } from "react";
+import { useAuth } from "../../context/AuthContext";
 import "./Login.css";
 
-type Props = {
-  loading?: boolean;
-  error?: string;
-};
-
-const onLogin = (e: FormEvent) => {
-  console.log(e);
-};
-
-export default function Login({ loading, error }: Props) {
-  const [email, setEmail] = useState("");
+export default function Login() {
+  const { login } = useAuth();
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    onLogin(e);
+    setLoading(true);
+    setError("");
+    try {
+      await login(identifier, password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign in failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -26,13 +29,14 @@ export default function Login({ loading, error }: Props) {
         <h1 className="login-title">Sign in</h1>
 
         <div className="login-field">
-          <label>Email</label>
+          <label>Email or username</label>
           <input
             className="input_login"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             placeholder="you@example.com"
+            autoComplete="username"
             required
           />
         </div>
@@ -46,6 +50,7 @@ export default function Login({ loading, error }: Props) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="current-password"
               required
             />
 
@@ -65,11 +70,6 @@ export default function Login({ loading, error }: Props) {
         <button className="login-button" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
         </button>
-
-        {/* <div className="login-footer">
-          <span>Don’t have an account?</span>
-          <a href="#">Sign up</a>
-        </div> */}
       </form>
     </div>
   );

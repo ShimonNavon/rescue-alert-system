@@ -1,9 +1,8 @@
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rescue_app/domain/services/api/rest_api_service.dart';
-import 'package:rescue_app/managers/storage_manager.dart';
+import 'package:rescue_app/domain/services/auth_service.dart';
 import 'package:rescue_app/repositories/location_repository.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:rescue_app/constants/asset_paths.dart';
@@ -117,8 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
       buttons: [
         DialogButton(
           onPressed: () async {
-            await FirebaseAuth.instance.signOut();
-            await StorageManager.instance.logout();
+            await AuthService.instance.signOut();
             // if (context.mounted) {
             //   Navigator.pop(context);
             // }

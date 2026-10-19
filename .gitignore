@@ -29,3 +29,7 @@ mobile/macos/Runner/GoogleService-Info.plist
 admin-panel/node_modules/
 admin-panel/dist/
 .env*.local
+
+# Local deployment secrets
+deploy/.env.deploy
+.env.deploy

@@ -114,7 +114,7 @@ class _PttTabScreenState extends State<PttTabScreen> {
                   child: LayoutBuilder(
                     builder: (context, cardConstraints) {
                       final buttonSize =
-                          (cardConstraints.maxHeight * 0.42).clamp(88.0, 120.0);
+                          (cardConstraints.maxHeight * 0.32).clamp(72.0, 104.0);
                       final iconSize = (buttonSize * 0.34).clamp(28.0, 40.0);
 
                       return Padding(

@@ -20,4 +20,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY backend /app
 
+CMD ["/app/entrypoint.sh"]
+
 EXPOSE 8000

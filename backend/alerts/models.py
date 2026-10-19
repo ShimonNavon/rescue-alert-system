@@ -49,19 +49,19 @@ class DeviceRegistration(models.Model):
         IOS = 'ios', 'iOS'
         OTHER = 'other', 'Other'
 
-    firebase_uid = models.CharField(max_length=128)
+    user_uid = models.CharField(max_length=128)
     device_id = models.CharField(max_length=256)
-    fcm_token = models.TextField()
+    push_token = models.TextField()
     platform = models.CharField(max_length=10, choices=Platform.choices, default=Platform.OTHER)
     device_model = models.CharField(max_length=128, blank=True)
     last_seen = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [('firebase_uid', 'device_id')]
-        indexes = [models.Index(fields=['firebase_uid'])]
+        unique_together = [('user_uid', 'device_id')]
+        indexes = [models.Index(fields=['user_uid'])]
 
     def __str__(self):
-        return f'{self.firebase_uid} / {self.platform} / {self.device_model}'
+        return f'{self.user_uid} / {self.platform} / {self.device_model}'
 
 
 class Alert(models.Model):

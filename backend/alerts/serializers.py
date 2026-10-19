@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from drf_spectacular.utils import extend_schema_field
@@ -7,10 +9,79 @@ from .models import Alert, DeviceRegistration, UserProfile, Group, Message, Noti
 
 
 class DeviceRegistrationSerializer(serializers.Serializer):
-    fcm_token = serializers.CharField()
+    push_token = serializers.CharField()
     device_id = serializers.CharField(max_length=256)
     platform = serializers.ChoiceField(choices=DeviceRegistration.Platform.values)
     device_model = serializers.CharField(max_length=128, required=False, allow_blank=True, default='')
+
+
+class UserInfoSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='get_full_name', read_only=True)
+    role = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'name', 'role', 'is_staff']
+
+    def get_role(self, obj):
+        profile = getattr(obj, 'userprofile', None)
+        return profile.role if profile else None
+
+
+class RegisterSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    full_name = serializers.CharField(required=False, allow_blank=True, default='')
+    invite_code = serializers.CharField(required=False, allow_blank=True, default='', write_only=True)
+
+    def validate_email(self, value):
+        email = value.strip().lower()
+        if User.objects.filter(username__iexact=email).exists():
+            raise serializers.ValidationError('An account with this email already exists.')
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError('An account with this email already exists.')
+        return email
+
+    def validate_invite_code(self, value):
+        expected = settings.REGISTRATION_INVITE_CODE
+        if expected and value != expected:
+            raise serializers.ValidationError('Invalid invite code.')
+        return value
+
+    def create(self, validated_data):
+        full_name = validated_data.pop('full_name', '') or ''
+        validated_data.pop('invite_code', None)
+        email = validated_data['email']
+        parts = full_name.split()
+        return User.objects.create_user(
+            username=email,
+            email=email,
+            password=validated_data['password'],
+            first_name=parts[0] if parts else '',
+            last_name=' '.join(parts[1:]) if len(parts) > 1 else '',
+        )
+
+
+class SessionLoginSerializer(serializers.Serializer):
+    username = serializers.CharField(help_text='Email address or username')
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        identifier = attrs['username'].strip()
+        user = User.objects.filter(username__iexact=identifier).first()
+        if user is None:
+            user = User.objects.filter(email__iexact=identifier).first()
+        if user is None:
+            raise serializers.ValidationError('Invalid credentials.')
+        authenticated = authenticate(username=user.username, password=attrs['password'])
+        if authenticated is None or not authenticated.is_active:
+            raise serializers.ValidationError('Invalid credentials.')
+        if not authenticated.is_staff:
+            raise serializers.ValidationError(
+                'This account cannot access the dispatcher panel.'
+            )
+        attrs['user'] = authenticated
+        return attrs
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

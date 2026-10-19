@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+*.sqlite3
+node_modules
+admin-panel/node_modules
+admin-panel/dist
+mobile
+assets
+postman
+**/__pycache__
+**/*.pyc

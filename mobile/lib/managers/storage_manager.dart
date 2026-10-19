@@ -1,8 +1,6 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:rescue_app/domain/services/api/rest_api_service.dart';
 import 'package:rescue_app/models/identity_user_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -14,10 +12,10 @@ class StorageManager {
   static final StorageManager _instance = StorageManager._privateConstructor();
   static StorageManager get instance => _instance;
 
-  // change to flutter pub add get_storage
   late FlutterSecureStorage _storage;
 
   static const String bearer = 'bearer';
+  static const String refreshTokenKey = 'refreshToken';
   static const String pnToken = 'pnTokenKey';
   static const resentSmsKey = 'resentSmsKey';
   static const String uUID = 'UUID';
@@ -94,39 +92,31 @@ class StorageManager {
     await set(key: StorageManager.bearer, jsonData: bearerData);
   }
 
-  Future<void> setFirebaseUserToken({
-    required String email,
-    required String token,
+  Future<void> setTokens({
+    required String access,
+    required String refresh,
+    String email = '',
   }) async {
-    if (token.isEmpty) {
-      return;
-    }
-
-    final IdentityUserData? existingIdentity = await getBearer();
-    if (existingIdentity != null) {
-      await setBearer(
-        IdentityUserData(
-          email: email,
-          accessToken: token,
-          activeBillingAccount: existingIdentity.activeBillingAccount,
-          isAdmin: existingIdentity.isAdmin,
-        ),
-      );
-    }
+    final existing = await getBearer();
+    await setBearer(
+      IdentityUserData(
+        email: email.isNotEmpty ? email : (existing?.email ?? ''),
+        accessToken: access,
+        activeBillingAccount: existing?.activeBillingAccount ?? false,
+        isAdmin: existing?.isAdmin ?? false,
+      ),
+    );
+    await _storage.write(key: refreshTokenKey, value: refresh);
   }
 
-  Future<void> syncFirebaseUser(User user, {bool forceRefresh = false}) async {
-    final String? idToken = await user.getIdToken(forceRefresh);
-    if (idToken == null || idToken.isEmpty) {
-      return;
-    }
+  Future<String?> getRefreshToken() {
+    return get(key: refreshTokenKey);
+  }
 
-    await RestApiService().setAccessAuthToken(access: idToken);
-
-    await setFirebaseUserToken(
-      email: user.email ?? '',
-      token: idToken,
-    );
+  Future<void> clearTokens() async {
+    identityUser = null;
+    await _storage.delete(key: bearer);
+    await _storage.delete(key: refreshTokenKey);
   }
 
   Future<bool> hasPushNotificationToken() async {
@@ -147,8 +137,7 @@ class StorageManager {
   }
 
   Future logout() async {
-    identityUser = null;
-    await _storage.delete(key: StorageManager.bearer);
+    await clearTokens();
   }
 
   Future<String?> getUUID() async {

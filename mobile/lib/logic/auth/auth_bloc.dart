@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rescue_app/domain/models/auth_user.dart';
 import 'package:rescue_app/domain/services/auth_service.dart';
 
 sealed class AuthEvent extends Equatable {
@@ -29,10 +29,10 @@ class AuthSignOutRequested extends AuthEvent {}
 class _AuthUserChanged extends AuthEvent {
   const _AuthUserChanged(this.user);
 
-  final User? user;
+  final AuthUser? user;
 
   @override
-  List<Object?> get props => [user?.uid];
+  List<Object?> get props => [user?.id];
 }
 
 class AuthState extends Equatable {
@@ -42,13 +42,13 @@ class AuthState extends Equatable {
     this.errorMessage,
   });
 
-  final User? user;
+  final AuthUser? user;
   final bool isLoading;
   final String? errorMessage;
 
   bool get isAuthenticated => user != null;
 
-  AuthState copyWith({User? user, bool? isLoading, String? errorMessage}) {
+  AuthState copyWith({AuthUser? user, bool? isLoading, String? errorMessage}) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
@@ -57,7 +57,7 @@ class AuthState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [user?.uid, isLoading, errorMessage];
+  List<Object?> get props => [user?.id, isLoading, errorMessage];
 }
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -71,7 +71,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   final AuthService _authService;
-  StreamSubscription<User?>? _authSub;
+  StreamSubscription<AuthUser?>? _authSub;
 
   Future<void> _onStarted(AuthStarted event, Emitter<AuthState> emit) async {
     _authSub?.cancel();

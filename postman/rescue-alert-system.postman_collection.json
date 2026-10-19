@@ -1180,7 +1180,7 @@
               "name": "201 Created",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 2,\n  \"sender\": {\n    \"id\": 1,\n    \"username\": \"<username>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\"\n  },\n  \"title\": \"Voice Update\",\n  \"text\": \"See attached audio.\",\n  \"voice_file\": \"voices/update.mp3\",\n  \"voice_url\": \"https://rescue-alert-system-malachim-badrachim.navonsimon.com/media/voices/update.mp3\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"timestamp\": \"2024-01-15T10:36:00Z\"\n}"
+              "body": "{\n  \"id\": 2,\n  \"sender\": {\n    \"id\": 1,\n    \"username\": \"<username>\",\n    \"email\": \"jdoe@example.com\",\n    \"role\": \"rescuer\"\n  },\n  \"title\": \"Voice Update\",\n  \"text\": \"See attached audio.\",\n  \"voice_file\": \"voices/update.mp3\",\n  \"voice_url\": \"{{base_url}}/media/voices/update.mp3\",\n  \"latitude\": 40.7128,\n  \"longitude\": -74.006,\n  \"timestamp\": \"2024-01-15T10:36:00Z\"\n}"
             }
           ]
         },

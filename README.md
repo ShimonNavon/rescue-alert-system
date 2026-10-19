@@ -38,7 +38,7 @@ When an incident occurs, the system identifies nearby available volunteers and a
   <li>Real-time or recent location tracking</li>
   <li>Incident creation by dispatcher/admin</li>
   <li>Radius-based volunteer matching</li>
-  <li>Push notifications to nearby responders</li>
+  <li>Push notifications to nearby responders (planned; currently disabled)</li>
   <li>Accept / decline response flow</li>
   <li>Responder tracking and coordination</li>
 </ul>
@@ -50,7 +50,7 @@ When an incident occurs, the system identifies nearby available volunteers and a
 <ol>
   <li>A dispatcher creates an alert with a location</li>
   <li>The system finds nearby available volunteers</li>
-  <li>Notifications are sent in real time</li>
+  <li>Alerts are available to dispatchers and API clients; push delivery is planned</li>
   <li>Volunteers can accept or decline the alert</li>
   <li>Responders are tracked and coordinated by the system</li>
 </ol>
@@ -66,7 +66,7 @@ When an incident occurs, the system identifies nearby available volunteers and a
   <li><strong>Mobile App:</strong> Flutter</li>
   <li><strong>Authentication:</strong> Django users + JWT (SimpleJWT); session cookies for the web panel</li>
   <li><strong>Notifications:</strong> in-app records; push delivery is pending a self-hosted ntfy/UnifiedPush setup</li>
-  <li><strong>Infrastructure:</strong> Docker + Docker Compose</li>
+  <li><strong>Infrastructure:</strong> Docker Compose locally; Kubernetes on the deployment cluster</li>
 </ul>
 
 <hr>
@@ -157,36 +157,66 @@ npm run dev
 <h2>🚢 Production Deployment</h2>
 
 <p>
-The stack runs on <code>debian01</code> under <code>/srv/rescue-alert-system</code>. Host nginx (port 80, TLS terminated at Cloudflare) proxies <code>/api/</code> and <code>/admin/</code> to <code>127.0.0.1:8004</code> and serves the built admin panel from <code>admin-panel/dist</code>.
+<strong>Handoff note:</strong> this work lives on the
+<code>feat/django-auth-cluster-deploy</code> branch. Merge it into <code>main</code>
+before handing off the default branch.
 </p>
 
+<p>
+The current deployment runs on the Kubernetes cluster in the <code>rescue-alert</code>
+namespace: Django backend, PostGIS, and the built admin panel. The panel and API share
+one origin at <code>http://ubuntu03:30093/</code> over Tailscale. There is no TLS yet.
+</p>
+
+<p>
+Cluster-specific pieces: images are built on <code>ubuntu02</code>, pushed to the
+registry on <code>ubuntu04</code>, and the backend/admin pods are pinned to
+<code>ubuntu04</code> because that registry listens on its loopback. PostgreSQL data
+lives on a <code>local-path</code> PVC.
+</p>
+
+<h3>Build and deploy</h3>
+
 <pre>
-git pull
-docker compose up -d --build            # backend + db only, no dev profile
-docker compose run --rm --no-deps admin-panel \
-    sh -c "npm ci && npm run build"     # refresh admin-panel/dist for nginx
+# On a Docker host (ubuntu02)
+./deploy/build.sh &lt;tag&gt;          # build both images
+PUSH=1 ./deploy/build.sh &lt;tag&gt;   # build, push, and update the manifest tags
+
+# From a machine with kubectl access to the cluster
+cp deploy/.env.example deploy/.env.deploy   # fill in secrets once
+./deploy/deploy.sh
 </pre>
 
 <p>
-<strong>The admin panel build is not automatic.</strong> <code>dist/</code> is gitignored, so a <code>git pull</code> alone leaves nginx serving the previous build — rebuild it whenever <code>admin-panel/</code> changes.
+<code>deploy/.env.deploy</code> is gitignored and contains the Django secret, database
+password, invite code, and initial superuser credentials. Share it securely with the
+next operator. Changing <code>POSTGRES_PASSWORD</code> after the database is initialized
+does not change the database's actual password.
 </p>
 
-<h3>Required nginx location</h3>
+<h3>Access and accounts</h3>
+
+<ul>
+  <li>Admin panel: <code>http://ubuntu03:30093/</code> (staff accounts only)</li>
+  <li>API docs: <code>http://ubuntu03:30093/api/docs/</code></li>
+  <li>Token helper: <code>http://ubuntu03:30093/get-token.html</code></li>
+  <li>Django admin: <code>http://ubuntu03:30093/admin/</code></li>
+</ul>
 
 <p>
-The server block needs a <code>/static/</code> location, otherwise Django admin and DRF static files fall through to the SPA's <code>try_files … /index.html</code> and the admin renders unstyled:
+Create the first staff user with
+<code>kubectl -n rescue-alert exec deploy/backend -- python manage.py createsuperuser</code>.
+New API users register with the invite code from the deployment env file.
 </p>
 
-<pre>
-location /static/ {
-    proxy_pass http://127.0.0.1:8004;
-    include /etc/nginx/snippets/proxy.conf;
-}
-</pre>
+<h3>Known limitations</h3>
 
-<p>
-HTTPS enforcement (<code>SECURE_SSL_REDIRECT</code>, HSTS) stays off until the shared <code>proxy.conf</code> snippet stops overwriting Cloudflare's <code>X-Forwarded-Proto</code> — see the comment in <code>backend/config/settings.py</code>.
-</p>
+<ul>
+  <li>Push notifications are disabled until the FCM replacement (ntfy/UnifiedPush) is deployed.</li>
+  <li>HTTP only over Tailscale; add TLS/ingress before exposing publicly.</li>
+  <li>The admin panel's chat/PTT views and the “new event” modal are still mock/not wired.</li>
+  <li>An Android APK has not been built here (Android SDK not installed); iOS needs Xcode/CocoaPods.</li>
+</ul>
 
 <hr>
 

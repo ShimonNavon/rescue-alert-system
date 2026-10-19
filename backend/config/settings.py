@@ -27,18 +27,18 @@ ALLOWED_HOSTS = config(
     cast=lambda value: [host.strip() for host in value.split(",")],
 )
 
-# Cookies are only ever sent to clients over HTTPS (TLS terminates at
-# Cloudflare), so marking them secure costs nothing and stops them leaking over
-# a plaintext hop. Overridable so plain-HTTP local development still works.
+# Cookies are only ever sent to clients over HTTPS (TLS terminates at the
+# reverse proxy), so marking them secure costs nothing and stops them leaking
+# over a plaintext hop. Overridable so plain-HTTP local development still works.
 SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=not DEBUG, cast=bool)
 CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=not DEBUG, cast=bool)
 
 # Django 4+ validates the Origin header against this list for unsafe methods.
 #
 # Leaving it empty broke every session-authenticated POST in production,
-# including the admin login form. TLS terminates at Cloudflare and nginx
-# forwards X-Forwarded-Proto: http (see the note below), so Django believes it
-# is serving plain HTTP and expects "http://<host>" while the browser sends
+# including the admin login form. When TLS terminates at a proxy and the proxy
+# forwards X-Forwarded-Proto: http (see the note below), Django believes it is
+# serving plain HTTP and expects "http://<host>" while the browser sends
 # "https://<host>" -- Origin mismatch, 403 "CSRF verification failed".
 #
 # So when the setting is unset we derive it from ALLOWED_HOSTS: every real host
@@ -73,16 +73,13 @@ if DEBUG:
 # DELIBERATELY OFF BY DEFAULT.
 #
 # Enabling either of these on the current infrastructure takes the site down.
-# nginx listens on port 80 only (Cloudflare terminates TLS) and
-# /etc/nginx/snippets/proxy.conf sets `X-Forwarded-Proto $scheme`, which
-# overwrites Cloudflare's "https" with "http". Django would therefore never
-# see a secure request: SECURE_SSL_REDIRECT would redirect forever, and
-# SECURE_HSTS_SECONDS would be served from a origin that believes it is
-# plaintext.
+# The edge is plain HTTP, so Django never sees a secure request:
+# SECURE_SSL_REDIRECT would redirect forever, and SECURE_HSTS_SECONDS would be
+# served from an origin that believes it is plaintext.
 #
-# To turn these on, first change that snippet to forward the real value:
-#     proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-# then set SECURE_PROXY_SSL_HEADER below and flip these in .env.
+# To turn these on, first configure the reverse proxy to forward the real
+# protocol and pass X-Forwarded-Proto, then set SECURE_PROXY_SSL_HEADER below
+# and flip these in .env.
 # Note the snippet is shared by every site on the host, so changing it affects
 # more than this project. HSTS in particular is hard to undo once a browser has
 # cached it -- start with a small SECURE_HSTS_SECONDS and raise it.

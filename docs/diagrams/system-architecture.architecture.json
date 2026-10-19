@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Rescue Alert System \u2014 Production Architecture",
+    "subtitle": "Mobile JWT, web session, Django API, PostGIS, and the ubuntu04 local registry",
+    "output": "docs/diagrams/system-architecture.html",
+    "visual_preset": "blueprint",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1240,
+      860
+    ]
+  },
+  "components": [
+    {
+      "id": "volunteer",
+      "type": "external",
+      "label": "Volunteer App",
+      "sublabel": "Flutter \u00b7 iOS / Android",
+      "pos": [
+        40,
+        120
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": "user"
+    },
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Dispatcher Browser",
+      "sublabel": "React admin panel",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": "staff only"
+    },
+    {
+      "id": "nginx",
+      "type": "frontend",
+      "label": "Admin nginx",
+      "sublabel": "SPA + reverse proxy",
+      "pos": [
+        300,
+        340
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": "NodePort 30093"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Django API",
+      "sublabel": "DRF \u00b7 SimpleJWT \u00b7 sessions",
+      "pos": [
+        560,
+        230
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "gunicorn :8000"
+    },
+    {
+      "id": "postgis",
+      "type": "database",
+      "label": "PostgreSQL + PostGIS",
+      "sublabel": "alerts \u00b7 users \u00b7 groups",
+      "pos": [
+        800,
+        90
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "5 Gi local-path PVC"
+    },
+    {
+      "id": "registry",
+      "type": "cloud",
+      "label": "Local registry",
+      "sublabel": "ubuntu04 loopback :5000",
+      "pos": [
+        800,
+        520
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "tag": "ral-backend / ral-admin"
+    },
+    {
+      "id": "builder",
+      "type": "external",
+      "label": "Build host ubuntu02",
+      "sublabel": "Docker \u00b7 deploy/build.sh",
+      "pos": [
+        1040,
+        650
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "tag": "SSH tunnel :15000"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Tailscale private network",
+      "wraps": [
+        "volunteer",
+        "browser",
+        "nginx",
+        "api",
+        "postgis",
+        "registry"
+      ],
+      "pad": 28
+    },
+    {
+      "kind": "region",
+      "label": "Kubernetes \u00b7 rescue-alert \u00b7 ubuntu04",
+      "wraps": [
+        "nginx",
+        "api",
+        "postgis",
+        "registry"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "from": "volunteer",
+      "to": "api",
+      "label": "JWT /api",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "browser",
+      "to": "nginx",
+      "label": "session + CSRF",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "nginx",
+      "to": "api",
+      "label": "reverse proxy",
+      "variant": "default",
+      "route": "straight"
+    },
+    {
+      "from": "api",
+      "to": "postgis",
+      "label": "SQL",
+      "variant": "default",
+      "route": "straight"
+    },
+    {
+      "from": "builder",
+      "to": "registry",
+      "label": "docker push",
+      "variant": "dashed",
+      "route": "straight"
+    },
+    {
+      "from": "registry",
+      "to": "api",
+      "label": "image pull",
+      "variant": "dashed",
+      "route": "straight"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two auth paths",
+      "items": [
+        "Mobile uses JWT access + refresh tokens",
+        "The web panel uses a Django session cookie + CSRF",
+        "Only staff accounts can open the dispatcher panel"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Deployment shape",
+      "items": [
+        "ubuntu02 builds the images",
+        "ubuntu04 hosts the registry and the app pods",
+        "Pods are pinned to ubuntu04 because the registry is loopback-only"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Data and limits",
+      "items": [
+        "PostGIS stores alert points and user locations",
+        "PostgreSQL runs on a 5 Gi local-path PVC",
+        "No TLS or ingress is configured yet"
+      ]
+    }
+  ]
+}

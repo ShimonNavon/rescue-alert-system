@@ -168,6 +168,11 @@ No secrets are in this handoff; live credentials are in the gitignored
 <code>deploy/.env.deploy</code>.
 </p>
 
+<p>
+<strong>Visuals in this handoff:</strong> Archify architecture, JWT sequence, and alert
+lifecycle; Mermaid session flow, ER model, and deployment pipeline.
+</p>
+
 <ul>
   <li><a href="#1-status-snapshot">1. Status snapshot</a></li>
   <li><a href="#2-architecture">2. Architecture</a></li>
@@ -229,15 +234,16 @@ No secrets are in this handoff; live credentials are in the gitignored
 
 ### 2. Architecture
 
-```mermaid
-flowchart LR
-  Mobile["Flutter app"] -- "JWT access/refresh" --> API["Django + DRF (gunicorn)"]
-  Panel["React admin panel"] -- "session cookie + CSRF" --> Nginx["nginx admin pod"]
-  Nginx -- "/api, /admin, /static" --> API
-  API --> DB[("PostgreSQL + PostGIS")]
-  Docker["ubuntu02 Docker"] --> Registry[("Registry :5000\nubuntu04 loopback")]
-  Registry --> K8s["Kubernetes\nrescue-alert namespace"]
-```
+<p align="center">
+  <a href="docs/diagrams/system-architecture.html">
+    <img src="docs/diagrams/system-architecture.png" alt="Rescue Alert System production architecture" width="100%">
+  </a>
+</p>
+
+<p align="center"><em>Interactive Archify diagram:
+<a href="docs/diagrams/system-architecture.html">system-architecture.html</a> ·
+source <a href="docs/diagrams/system-architecture.architecture.json">JSON</a>.
+Open the HTML locally to pan, zoom, inspect paths, and export.</em></p>
 
 #### Runtime topology
 
@@ -312,6 +318,16 @@ deployments. Moving to a shared registry or image mirror removes this constraint
 - Registration sets `username = email` (lowercased) and creates the profile via signal.
 - Login accepts either the username or the email address.
 
+<p align="center">
+  <a href="docs/diagrams/auth-jwt.sequence.html">
+    <img src="docs/diagrams/auth-jwt.png" alt="Mobile JWT login, refresh, and logout sequence" width="100%">
+  </a>
+</p>
+
+<p align="center"><em>Interactive Archify sequence:
+<a href="docs/diagrams/auth-jwt.sequence.html">auth-jwt.sequence.html</a> ·
+source <a href="docs/diagrams/auth-jwt.sequence.json">JSON</a>.</em></p>
+
 **Web panel — session cookie**
 
 | Endpoint | Method | Purpose |
@@ -325,6 +341,33 @@ deployments. Moving to a shared registry or image mirror removes this constraint
   with login/logout POSTs.
 - `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` are `False` in the current cluster
   because the edge is HTTP. Set them to `True` when TLS is added.
+
+<p><strong>Web session flow</strong></p>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Dispatcher browser
+    participant N as Admin nginx
+    participant A as Django API
+    participant D as PostGIS
+    B->>N: GET /api/auth/session/
+    N->>A: proxy
+    A-->>N: CSRF cookie + anonymous state
+    N-->>B: 200 + Set-Cookie
+    B->>N: POST /api/auth/session/login/ + X-CSRFToken
+    N->>A: proxy
+    A->>D: authenticate staff
+    D-->>A: user
+    A-->>N: session cookie
+    N-->>B: 200 + session
+    B->>N: GET /api/alerts/ + cookie
+    N->>A: proxy
+    A->>D: query alerts
+    D-->>A: rows
+    A-->>N: 200 JSON
+    N-->>B: 200 JSON
+```
 
 #### Roles and permissions
 
@@ -359,6 +402,68 @@ All routes are under `/api/`. Interactive docs: `/api/docs/`; schema: `/api/sche
 
 Alert statuses: `OPEN`, `DISPATCHED`, `ACCEPTED`, `IN_PROGRESS`, `RESOLVED`, `CANCELLED`.
 Priorities: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`. Location is stored as a PostGIS point.
+
+<p align="center">
+  <a href="docs/diagrams/alert-lifecycle.lifecycle.html">
+    <img src="docs/diagrams/alert-lifecycle.png" alt="Alert lifecycle from open to resolved or cancelled" width="100%">
+  </a>
+</p>
+
+<p align="center"><em>Interactive Archify lifecycle:
+<a href="docs/diagrams/alert-lifecycle.lifecycle.html">alert-lifecycle.lifecycle.html</a> ·
+source <a href="docs/diagrams/alert-lifecycle.lifecycle.json">JSON</a>.</em></p>
+
+<p><strong>Data model</strong></p>
+
+```mermaid
+erDiagram
+    USER ||--|| USERPROFILE : profile
+    USER ||--o{ MESSAGE : sends
+    USER }o--o{ GROUP : member
+    USER ||--o{ NOTIFICATION : receives
+    DEVICEREGISTRATION }o--|| USER : "user_uid (string)"
+    ALERT {
+        int id
+        string title
+        string description
+        string location
+        string status
+        string priority
+        datetime created_at
+        datetime updated_at
+    }
+    USERPROFILE {
+        int id
+        string role
+        float latitude
+        float longitude
+    }
+    GROUP {
+        int id
+        string name
+    }
+    MESSAGE {
+        int id
+        string title
+        text text
+        string voice_file
+        float latitude
+        float longitude
+        datetime timestamp
+    }
+    NOTIFICATION {
+        int id
+        string token
+    }
+    DEVICEREGISTRATION {
+        string user_uid
+        string device_id
+        string push_token
+        string platform
+        string device_model
+        datetime last_seen
+    }
+```
 
 #### Users
 
@@ -492,6 +597,21 @@ The admin pod’s nginx serves the built Vite app and proxies `/api/`, `/admin/`
 
 Backend probes use `GET /api/docs/` with `Host: ubuntu03`. If the cluster hostname
 changes, update both the probe header and `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`.
+
+<p><strong>Deployment pipeline</strong></p>
+
+```mermaid
+flowchart LR
+    C[Code change] --> T[Tests]
+    T --> B[deploy/build.sh]
+    B --> R[(Registry :5000)]
+    R --> M[Manifest tag]
+    M --> A[deploy.sh]
+    A --> K[Kubernetes rollout]
+    K --> S[Smoke test]
+    T -. failure .-> X[Stop]
+    S -. failure .-> P[Previous image tag]
+```
 
 #### Build and push
 

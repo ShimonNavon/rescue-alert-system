@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Mobile Authentication \u2014 JWT Login, Refresh, Logout",
+    "subtitle": "Access token 60 minutes \u00b7 refresh token 30 days \u00b7 rotation and blacklist",
+    "output": "docs/diagrams/auth-jwt.sequence.html",
+    "viewBox": [
+      1085,
+      640
+    ],
+    "column_fit": "spread",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "volunteer",
+      "type": "external",
+      "label": "Volunteer App",
+      "sublabel": "Flutter \u00b7 secure storage"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Django API",
+      "sublabel": "SimpleJWT"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostGIS",
+      "sublabel": "users + alerts"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 235,
+      "label": "Login"
+    },
+    {
+      "from": 245,
+      "to": 375,
+      "label": "Authenticated request"
+    },
+    {
+      "from": 385,
+      "to": 540,
+      "label": "Refresh + logout"
+    }
+  ],
+  "messages": [
+    {
+      "id": "login",
+      "from": "volunteer",
+      "to": "api",
+      "y": 160,
+      "label": "POST /api/token/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verify",
+      "from": "api",
+      "to": "db",
+      "y": 188,
+      "label": "authenticate user",
+      "variant": "security"
+    },
+    {
+      "id": "user",
+      "from": "db",
+      "to": "api",
+      "y": 216,
+      "label": "user row",
+      "variant": "return"
+    },
+    {
+      "id": "tokens",
+      "from": "api",
+      "to": "volunteer",
+      "y": 244,
+      "label": "access + refresh",
+      "variant": "return"
+    },
+    {
+      "id": "alerts",
+      "from": "volunteer",
+      "to": "api",
+      "y": 272,
+      "label": "GET /api/alerts/ \u00b7 Bearer",
+      "variant": "emphasis"
+    },
+    {
+      "id": "query",
+      "from": "api",
+      "to": "db",
+      "y": 300,
+      "label": "query alerts",
+      "variant": "default"
+    },
+    {
+      "id": "rows",
+      "from": "db",
+      "to": "api",
+      "y": 328,
+      "label": "alert rows",
+      "variant": "return"
+    },
+    {
+      "id": "response",
+      "from": "api",
+      "to": "volunteer",
+      "y": 356,
+      "label": "200 JSON",
+      "variant": "return"
+    },
+    {
+      "id": "refresh",
+      "from": "volunteer",
+      "to": "api",
+      "y": 384,
+      "label": "POST /api/token/refresh/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "newTokens",
+      "from": "api",
+      "to": "volunteer",
+      "y": 412,
+      "label": "new access + rotated refresh",
+      "variant": "return"
+    },
+    {
+      "id": "logout",
+      "from": "volunteer",
+      "to": "api",
+      "y": 440,
+      "label": "POST /api/auth/logout/",
+      "variant": "default"
+    },
+    {
+      "id": "blacklist",
+      "from": "api",
+      "to": "db",
+      "y": 468,
+      "label": "blacklist refresh",
+      "variant": "security"
+    },
+    {
+      "id": "ok",
+      "from": "db",
+      "to": "api",
+      "y": 496,
+      "label": "ok",
+      "variant": "return"
+    },
+    {
+      "id": "done",
+      "from": "api",
+      "to": "volunteer",
+      "y": 524,
+      "label": "205",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "volunteer",
+      "from": 155,
+      "to": 530,
+      "type": "external"
+    },
+    {
+      "participant": "api",
+      "from": 155,
+      "to": 530,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 183,
+      "to": 222,
+      "type": "database"
+    },
+    {
+      "participant": "db",
+      "from": 295,
+      "to": 334,
+      "type": "database"
+    },
+    {
+      "participant": "db",
+      "from": 463,
+      "to": 502,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Token policy",
+      "items": [
+        "Access tokens last 60 minutes",
+        "Refresh tokens last 30 days",
+        "Rotation and blacklist-after-rotation are enabled"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Client behavior",
+      "items": [
+        "The app stores tokens in secure storage",
+        "A 401 triggers one refresh and retry",
+        "Logout blacklists the refresh token"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "API surface",
+      "items": [
+        "Login accepts email or username",
+        "All other calls send Authorization: Bearer",
+        "Only authenticated users reach alerts and users"
+      ]
+    }
+  ]
+}

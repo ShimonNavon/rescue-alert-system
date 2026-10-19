@@ -1,0 +1,158 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Alert Lifecycle",
+    "subtitle": "Dispatcher intake, volunteer response, and terminal outcomes",
+    "output": "docs/diagrams/alert-lifecycle.lifecycle.html",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Intake"
+    },
+    {
+      "id": "dispatch",
+      "label": "Dispatch + accept"
+    },
+    {
+      "id": "response",
+      "label": "Field response"
+    },
+    {
+      "id": "terminal",
+      "label": "Terminal"
+    }
+  ],
+  "states": [
+    {
+      "id": "open",
+      "type": "start",
+      "label": "Open",
+      "sublabel": "alert created",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "new"
+    },
+    {
+      "id": "dispatched",
+      "type": "active",
+      "label": "Dispatched",
+      "sublabel": "nearby volunteers alerted",
+      "lane": "dispatch",
+      "col": 1,
+      "step": "02",
+      "tag": "waiting"
+    },
+    {
+      "id": "accepted",
+      "type": "active",
+      "label": "Accepted",
+      "sublabel": "responder assigned",
+      "lane": "dispatch",
+      "col": 2,
+      "step": "03",
+      "tag": "assigned"
+    },
+    {
+      "id": "in_progress",
+      "type": "active",
+      "label": "In Progress",
+      "sublabel": "responder on scene",
+      "lane": "response",
+      "col": 3,
+      "step": "04",
+      "tag": "active"
+    },
+    {
+      "id": "resolved",
+      "type": "success",
+      "label": "Resolved",
+      "sublabel": "incident closed",
+      "lane": "terminal",
+      "col": 4,
+      "step": "05",
+      "tag": "success"
+    },
+    {
+      "id": "cancelled",
+      "type": "failure",
+      "label": "Cancelled",
+      "sublabel": "false alarm / withdrawn",
+      "lane": "terminal",
+      "col": 3,
+      "step": "06",
+      "tag": "closed"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "open",
+      "to": "dispatched",
+      "label": "notify"
+    },
+    {
+      "from": "dispatched",
+      "to": "accepted",
+      "label": "accept"
+    },
+    {
+      "from": "accepted",
+      "to": "in_progress",
+      "label": "arrive"
+    },
+    {
+      "from": "in_progress",
+      "to": "resolved",
+      "label": "resolve",
+      "variant": "emphasis"
+    },
+    {
+      "from": "open",
+      "to": "cancelled",
+      "label": "cancel",
+      "variant": "security",
+      "route": "bottom-channel",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "from": "in_progress",
+      "to": "cancelled",
+      "label": "cancel",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Happy path",
+      "items": [
+        "Open alerts are dispatched to nearby available volunteers",
+        "A volunteer accepts and arrives on scene",
+        "Resolved is the successful terminal state"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Operational pause",
+      "items": [
+        "Dispatched means notifications are out and the system is waiting",
+        "Accepted means ownership has moved to a responder",
+        "In Progress means the responder is on scene"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Terminal exits",
+      "items": [
+        "Cancelled can happen before or during response",
+        "False alarms and withdrawn incidents use the same terminal state",
+        "The API also exposes CANCELLED for integration clients"
+      ]
+    }
+  ]
+}

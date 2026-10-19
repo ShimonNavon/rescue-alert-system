@@ -175,6 +175,18 @@ registry on <code>ubuntu04</code>, and the backend/admin pods are pinned to
 lives on a <code>local-path</code> PVC.
 </p>
 
+<h3>Handoff prerequisites</h3>
+
+<ul>
+  <li>Tailscale access to <code>ubuntu03</code> and port <code>30093</code>.</li>
+  <li>SSH access to <code>ubuntu03</code> for <code>kubectl</code> and to
+      <code>ubuntu02</code> for Docker builds.</li>
+  <li>The registry tunnel key (<code>~/.ssh/mr-registry</code>) or matching
+      <code>REGISTRY_KEY</code>/<code>REGISTRY_HOST</code> values.</li>
+  <li><code>deploy/.env.deploy</code>, shared securely — it is not in Git and contains
+      the live superuser password, invite code, and database password.</li>
+</ul>
+
 <h3>Build and deploy</h3>
 
 <pre>
@@ -216,6 +228,11 @@ New API users register with the invite code from the deployment env file.
   <li>HTTP only over Tailscale; add TLS/ingress before exposing publicly.</li>
   <li>The admin panel's chat/PTT views and the “new event” modal are still mock/not wired.</li>
   <li>An Android APK has not been built here (Android SDK not installed); iOS needs Xcode/CocoaPods.</li>
+  <li>Password resets are manual through Django admin; SMTP is not configured.</li>
+  <li>There is no CI pipeline yet; run <code>scripts/test_all.sh</code> and
+      <code>scripts/test_backend.sh</code> manually.</li>
+  <li>The current database contains demo users, groups, and alerts from
+      <code>populate_mock_data</code>.</li>
 </ul>
 
 <hr>

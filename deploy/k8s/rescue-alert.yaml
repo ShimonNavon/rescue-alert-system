@@ -198,7 +198,7 @@ spec:
         kubernetes.io/hostname: ubuntu04
       containers:
         - name: nginx
-          image: localhost:5000/ral-admin:k8s-20261019-0957-final
+          image: localhost:5000/ral-admin:k8s-20261019-1016-panel
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -1,15 +1,66 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FC } from "react";
 import "./EventTable.css";
-import { events } from "../../data/events";
 import Avatar from "../Avatar/Avatar";
+import { fetchAlerts } from "../../services/alertsService";
+import type {
+  ApiAlert,
+  ApiAlertPriority,
+  ApiAlertStatus,
+  EventItem,
+  OriginEventStatus,
+} from "../../types/types";
 
 interface EventTableProps {
   onSelect?: (id: number) => void;
   onAction?: (id: number, action: string) => void;
 }
 
+type EventRow = EventItem & {
+  statusLabel: string;
+  priorityLabel: string;
+  description: string;
+};
+
+const STATUS_MAP: Record<
+  ApiAlertStatus,
+  { ui: OriginEventStatus; label: string }
+> = {
+  OPEN: { ui: "opened", label: "פתוח" },
+  DISPATCHED: { ui: "assigned", label: "נשלח" },
+  ACCEPTED: { ui: "assigned", label: "אושר" },
+  IN_PROGRESS: { ui: "arrived", label: "בטיפול" },
+  RESOLVED: { ui: "solved", label: "נפתר" },
+  CANCELLED: { ui: "closed", label: "בוטל" },
+};
+
+const PRIORITY_MAP: Record<
+  ApiAlertPriority,
+  { ui: EventItem["priority"]; label: string }
+> = {
+  LOW: { ui: "low", label: "נמוך" },
+  MEDIUM: { ui: "medium", label: "בינוני" },
+  HIGH: { ui: "high", label: "גבוה" },
+  CRITICAL: { ui: "critical", label: "קריטי" },
+};
+
+const formatAge = (iso: string) => {
+  const seconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(iso).getTime()) / 1000),
+  );
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remaining = seconds % 60;
+  return [hours, minutes, remaining]
+    .map((value) => String(value).padStart(2, "0"))
+    .join(":");
+};
+
 const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
+  const [alerts, setAlerts] = useState<ApiAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     title: "",
     location: "",
@@ -20,19 +71,52 @@ const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
     action: "all",
   });
 
+  const loadAlerts = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error: fetchError } = await fetchAlerts();
+    setAlerts(data);
+    setError(fetchError);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadAlerts();
+    const interval = window.setInterval(loadAlerts, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   const handleChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  const rows: EventRow[] = useMemo(
+    () =>
+      alerts.map((alert) => {
+        const status = STATUS_MAP[alert.status];
+        const priority = PRIORITY_MAP[alert.priority];
+        return {
+          id: alert.id,
+          title: alert.title,
+          description: alert.description,
+          location: `${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`,
+          status: status.ui,
+          statusLabel: status.label,
+          priority: priority.ui,
+          priorityLabel: priority.label,
+          time: formatAge(alert.created_at),
+          user: "מוקד",
+        };
+      }),
+    [alerts],
+  );
+
   const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
+    return rows.filter((event) => {
       const matchesAction =
         filters.action === "all" ||
         (filters.action === "opened" && event.status === "opened") ||
-        (filters.action === "closed" && event.status === "closed") ||
-        (filters.action === "assigned" && event.status === "assigned") ||
-        (filters.action === "arrived" && event.status === "arrived") ||
-        (filters.action === "solved" && event.status === "solved");
+        (filters.action === "closed" && event.status === "closed");
 
       return (
         (filters.title === "" ||
@@ -50,13 +134,23 @@ const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
         matchesAction
       );
     });
-  }, [filters]);
+  }, [filters, rows]);
 
   return (
     <div className="table-wrapper" dir="rtl">
+      <div className="event-table-toolbar">
+        <span>
+          {loading ? "טוען..." : `${filteredEvents.length} אירועים`}
+        </span>
+        <button type="button" onClick={loadAlerts} disabled={loading}>
+          רענן
+        </button>
+      </div>
+
+      {error && <div className="event-table-error">שגיאה: {error}</div>}
+
       <table className="event-table">
         <thead>
-          {/* 🔹 HEADER LABELS */}
           <tr>
             <th></th>
             <th>אירוע</th>
@@ -68,7 +162,6 @@ const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
             <th>פעולות</th>
           </tr>
 
-          {/* 🔹 FILTER ROW INSIDE HEADER */}
           <tr className="filters">
             <th className="filter-cell filter-cell--clear">
               <button
@@ -109,7 +202,7 @@ const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
                 <option value="all">הכל</option>
                 <option value="opened">פתוח</option>
                 <option value="assigned">משוייך</option>
-                <option value="arrived">הגיעה</option>
+                <option value="arrived">בטיפול</option>
                 <option value="solved">נפתר</option>
                 <option value="closed">סגור</option>
               </select>
@@ -120,6 +213,7 @@ const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
                 onChange={(e) => handleChange("priority", e.target.value)}
               >
                 <option value="all">הכל</option>
+                <option value="critical">קריטי</option>
                 <option value="high">גבוה</option>
                 <option value="medium">בינוני</option>
                 <option value="low">נמוך</option>
@@ -142,14 +236,30 @@ const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
             <th className="filter-cell" data-label="פעולות">
               <select onChange={(e) => handleChange("action", e.target.value)}>
                 <option value="all">הכל</option>
-                <option value="open">ניתן לסגור</option>
-                <option value="closed">סגור בלבד</option>
+                <option value="opened">פתוחים</option>
+                <option value="closed">סגורים</option>
               </select>
             </th>
           </tr>
         </thead>
 
         <tbody>
+          {loading && rows.length === 0 && (
+            <tr>
+              <td colSpan={8} className="event-table-empty">
+                טוען אירועים...
+              </td>
+            </tr>
+          )}
+
+          {!loading && !error && filteredEvents.length === 0 && (
+            <tr>
+              <td colSpan={8} className="event-table-empty">
+                אין אירועים להצגה
+              </td>
+            </tr>
+          )}
+
           {filteredEvents.map((event) => (
             <tr key={event.id}>
               <td className="cell-select">
@@ -161,18 +271,20 @@ const EventTable: FC<EventTableProps> = ({ onSelect, onAction }) => {
                 />
               </td>
 
-              <td data-label="אירוע">{event.title}</td>
+              <td data-label="אירוע" title={event.description}>
+                {event.title}
+              </td>
               <td data-label="מיקום">{event.location}</td>
 
               <td data-label="סטטוס">
                 <span className={`badge status ${event.status}`}>
-                  {event.status}
+                  {event.statusLabel}
                 </span>
               </td>
 
               <td data-label="עדיפות">
                 <span className={`badge priority ${event.priority}`}>
-                  {event.priority}
+                  {event.priorityLabel}
                 </span>
               </td>
 

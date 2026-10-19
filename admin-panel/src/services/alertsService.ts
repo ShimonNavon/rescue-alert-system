@@ -1,133 +1,119 @@
-import { type Alert } from '../types/types';
+import type {
+  ApiAlert,
+  ApiAlertPriority,
+  ApiAlertStatus,
+} from '../types/types';
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api/').replace(/\/?$/, '/');
 const TIMEOUT_MS = 60000;
 const RETRY_COUNT = 2;
 const BACKOFF_MS = 1000;
 
-/**
- * Fetch alerts with retry logic and timeout handling
- */
-const fetchWithRetry = async (
-  url: string,
+function getCookie(name: string): string {
+  const prefix = `${name}=`;
+  const match = document.cookie.split('; ').find((item) => item.startsWith(prefix));
+  return match ? decodeURIComponent(match.slice(prefix.length)) : '';
+}
+
+async function errorMessage(response: Response): Promise<string> {
+  try {
+    const data = await response.json();
+    if (typeof data?.detail === 'string') return data.detail;
+    if (Array.isArray(data?.non_field_errors) && data.non_field_errors.length > 0) {
+      return String(data.non_field_errors[0]);
+    }
+    return JSON.stringify(data);
+  } catch {
+    return `HTTP ${response.status}`;
+  }
+}
+
+const request = async <T>(
+  path: string,
   options: RequestInit = {},
   retries: number = RETRY_COUNT,
   backoffMs: number = BACKOFF_MS,
-  timeoutMs: number = TIMEOUT_MS
-): Promise<Response> => {
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+): Promise<T> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const method = (options.method || 'GET').toUpperCase();
+  const headers: HeadersInit = {
+    ...(method === 'GET' || method === 'HEAD'
+      ? {}
+      : { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }),
+    ...(options.headers || {}),
+  };
 
   try {
-    const response = await fetch(url, { credentials: 'same-origin', ...options, signal: abortController.signal });
+    const response = await fetch(`${API_BASE}${path}`, {
+      credentials: 'same-origin',
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+
     if (!response.ok) {
-      // Retry on common transient upstream errors
       if (retries > 0 && [502, 503, 504].includes(response.status)) {
-        await new Promise((r) => setTimeout(r, backoffMs));
-        return fetchWithRetry(url, options, retries - 1, backoffMs * 2, timeoutMs);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        return request<T>(path, options, retries - 1, backoffMs * 2);
       }
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(await errorMessage(response));
     }
-    return response;
+
+    const text = await response.text();
+    return (text ? JSON.parse(text) : null) as T;
   } catch (error) {
-    // Avoid retrying on our own timeout aborts
-    if (retries > 0 && (error as Error).name !== 'AbortError' && ((error as Error).message.includes('fetch') || (error as Error).message.includes('network'))) {
-      await new Promise((r) => setTimeout(r, backoffMs));
-      return fetchWithRetry(url, options, retries - 1, backoffMs * 2, timeoutMs);
+    const isAbort = (error as Error).name === 'AbortError';
+    if (!isAbort && error instanceof TypeError && retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      return request<T>(path, options, retries - 1, backoffMs * 2);
     }
     throw error;
   } finally {
-    clearTimeout(timeoutId);
+    clearTimeout(timeout);
   }
 };
 
-/**
- * Fetch all alerts from the API
- * @returns Array of alert objects and error information
- */
-export const fetchAlerts = async (): Promise<{ data: Alert[]; error: string | null }> => {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
-  const url = `${baseUrl}alerts/`;
-
+export const fetchAlerts = async (): Promise<{
+  data: ApiAlert[];
+  error: string | null;
+}> => {
   try {
-    const res = await fetchWithRetry(url);
-
-    // Try JSON first, fallback to empty array
-    const text = await res.text();
-    let data: Alert[] = [];
-    try {
-      const parsed = text ? JSON.parse(text) : [];
-      data = Array.isArray(parsed) ? parsed : [parsed];
-    } catch {
-      console.error('Failed to parse alerts response as JSON');
-      data = [];
-    }
-
-    return { data, error: null };
+    const data = await request<ApiAlert[]>('alerts/');
+    return { data: Array.isArray(data) ? data : [], error: null };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch alerts';
-    console.error('Error fetching alerts:', errorMessage);
-    return { data: [], error: errorMessage };
+    return {
+      data: [],
+      error: error instanceof Error ? error.message : 'Failed to fetch alerts',
+    };
   }
 };
-
-/**
- * Fetch alerts with optional filtering
- * @param filter - Optional query parameters for filtering (e.g., { severity: 'high', type: 'error' })
- * @returns Array of alert objects and error information
- */
-export const fetchAlertsWithFilter = async (
-  filter?: Record<string, string | number | boolean>
-): Promise<{ data: Alert[]; error: string | null }> => {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
-  let url = `${baseUrl}alerts/`;
-
-  if (filter) {
-    const params = new URLSearchParams();
-    Object.entries(filter).forEach(([key, value]) => {
-      params.append(key, String(value));
-    });
-    url += `?${params.toString()}`;
-  }
-
-  try {
-    const res = await fetchWithRetry(url);
-
-    const text = await res.text();
-    let data: Alert[] = [];
-    try {
-      const parsed = text ? JSON.parse(text) : [];
-      data = Array.isArray(parsed) ? parsed : [parsed];
-    } catch {
-      console.error('Failed to parse alerts response as JSON');
-      data = [];
-    }
-
-    return { data, error: null };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch alerts';
-    console.error('Error fetching alerts:', errorMessage);
-    return { data: [], error: errorMessage };
-  }
-};
-
 
 export const fetchAlertById = async (
-  id: number | string
-): Promise<{ data: Alert | null; error: string | null }> => {
+  id: number | string,
+): Promise<{ data: ApiAlert | null; error: string | null }> => {
   try {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL;
-    const url = `${baseUrl.replace(/\/$/, "")}/alerts/${id}/`;
-
-    const res = await fetchWithRetry(url);
-    const text = await res.text();
-
-    const data = text ? JSON.parse(text) : null;
-
-    return { data, error: null };
+    return { data: await request<ApiAlert>(`alerts/${id}/`), error: null };
   } catch (error) {
     return {
       data: null,
-      error: error instanceof Error ? error.message : "Failed to fetch alert",
+      error: error instanceof Error ? error.message : 'Failed to fetch alert',
     };
   }
+};
+
+export type CreateAlertInput = {
+  title: string;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  priority?: ApiAlertPriority;
+  status?: ApiAlertStatus;
+};
+
+export const createAlert = async (input: CreateAlertInput): Promise<ApiAlert> => {
+  return request<ApiAlert>('alerts/', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 };

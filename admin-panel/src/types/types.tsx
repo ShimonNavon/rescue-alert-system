@@ -7,7 +7,7 @@ export interface EventItem {
   title: string
   location: string
   status: OriginEventStatus
-  priority: 'low' | 'medium' | 'high'
+  priority: 'low' | 'medium' | 'high' | 'critical'
   time: string
   user: string
 }
@@ -126,13 +126,33 @@ interface ImageMessage extends BaseMessage {
 }
 export type Message = TextMessage | ImageMessage;
 
-export interface Alert {
-  id: string;
+export type ApiAlertStatus =
+  | 'OPEN'
+  | 'DISPATCHED'
+  | 'ACCEPTED'
+  | 'IN_PROGRESS'
+  | 'RESOLVED'
+  | 'CANCELLED';
+
+export type ApiAlertPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface ApiAlert {
+  id: number;
   title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  severity?: 'low' | 'medium' | 'high' | 'critical';
-  timestamp: string;
-  read?: boolean;
-  [key: string]: any;
+  description: string;
+  latitude: number;
+  longitude: number;
+  status: ApiAlertStatus;
+  priority: ApiAlertPriority;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiUserProfile {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  latitude: number | null;
+  longitude: number | null;
 }

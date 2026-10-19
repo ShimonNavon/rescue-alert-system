@@ -156,6 +156,20 @@ if ADMIN_USER and ADMIN_PASSWORD:
         and session.get("user", {}).get("username") == ADMIN_USER,
     )
 
+    status, alerts = request(admin, "GET", "/api/alerts/")
+    check(
+        "Admin session alerts (panel data)",
+        status == 200 and isinstance(alerts, list) and len(alerts) > 0,
+        f"HTTP {status}",
+    )
+
+    status, users = request(admin, "GET", "/api/user/")
+    check(
+        "Admin session users (panel data)",
+        status == 200 and isinstance(users, list) and len(users) > 0,
+        f"HTTP {status}",
+    )
+
     status, _ = request(
         admin,
         "POST",

@@ -1,52 +1,93 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./Situation.css";
-import { INITIAL_ROWS } from "../../data/initialRows";
 import Avatar from "../Avatar/Avatar";
 import { Timestamp, StatusCell } from "../../utils/utils";
+import { fetchUsers } from "../../services/usersService";
+import type { ApiUserProfile, User } from "../../types/types";
 
 type SortOrder = "asc" | "desc" | null;
 
+const ROLE_LABELS: Record<string, string> = {
+  rescuer: "מחלץ",
+  admin: "מנהל",
+  user: "משתמש",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  rescuer: "#22c55e",
+  admin: "#3b82f6",
+  user: "#9e9e9e",
+};
+
+const toRow = (profile: ApiUserProfile): User => {
+  const role = profile.role || "user";
+  const hasLocation =
+    profile.latitude !== null && profile.longitude !== null;
+  return {
+    id: profile.id,
+    name: profile.username || profile.email,
+    lastUpdate: "—",
+    status: ROLE_LABELS[role] ?? role,
+    event: null,
+    info: hasLocation
+      ? `${profile.email} · ${profile.latitude!.toFixed(4)}, ${profile.longitude!.toFixed(4)}`
+      : profile.email,
+    dotColor: ROLE_COLORS[role] ?? "#9e9e9e",
+    dotType: "single",
+    unread: 0,
+  };
+};
+
 export default function Situation() {
+  const [profiles, setProfiles] = useState<ApiUserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [contactSearch, setContactSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("הכל");
   const [sortOrder, setSortOrder] = useState<SortOrder>(null);
 
-  // Robust parser: handles Date object, ISO string, or "DD/MM/YYYY HH:mm"
+  const loadUsers = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error: fetchError } = await fetchUsers();
+    setProfiles(data);
+    setError(fetchError);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadUsers();
+    const interval = window.setInterval(loadUsers, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const rows = useMemo(() => profiles.map(toRow), [profiles]);
+
   const parseDate = (value: any) => {
     if (!value) return 0;
-
     if (value instanceof Date) return value.getTime();
     if (typeof value === "number") return value;
-
     if (typeof value === "string") {
-      // ISO format
       const isoDate = new Date(value).getTime();
       if (!isNaN(isoDate)) return isoDate;
-
-      // DD/MM/YYYY HH:mm format
       const [datePart, timePart = "00:00"] = value.split(" ");
       const [day, month, year] = datePart.split("/").map(Number);
       const [hours, minutes] = timePart.split(":").map(Number);
       const d = new Date(year, month - 1, day, hours, minutes).getTime();
       if (!isNaN(d)) return d;
-
-      // fallback
-      return 0;
     }
-
     return 0;
   };
 
-  // Filter rows
-  const filtered = INITIAL_ROWS.filter((row) => {
-    const cq = contactSearch.toLowerCase();
-    const matchesContact = cq === "" || row.name.toLowerCase().includes(cq);
+  const filtered = rows.filter((row) => {
+    const query = contactSearch.toLowerCase();
+    const matchesContact =
+      query === "" || row.name.toLowerCase().includes(query);
     const matchesStatus =
-      statusFilter === "הכל" || row?.status?.includes(statusFilter);
+      statusFilter === "הכל" || row.status?.includes(statusFilter);
     return matchesContact && matchesStatus;
   });
 
-  // Sort rows by lastUpdate
   const sorted = [...filtered].sort((a, b) => {
     if (!sortOrder) return 0;
     const dateA = parseDate(a.lastUpdate);
@@ -54,7 +95,6 @@ export default function Situation() {
     return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
   });
 
-  // Toggle sort order
   const toggleSort = () => {
     if (sortOrder === "asc") setSortOrder("desc");
     else if (sortOrder === "desc") setSortOrder(null);
@@ -66,13 +106,25 @@ export default function Situation() {
 
   return (
     <div className="situation">
-      {/* Header */}
       <div className="situation__header">
         <span className="situation__title">סטטוס</span>
-        <span className="situation__count">{INITIAL_ROWS.length} פריטים</span>
+        <div className="situation__header-right">
+          <span className="situation__count">
+            {loading ? "טוען..." : `${rows.length} משתמשים`}
+          </span>
+          <button
+            type="button"
+            className="situation__refresh"
+            onClick={loadUsers}
+            disabled={loading}
+          >
+            רענן
+          </button>
+        </div>
       </div>
 
-      {/* Table */}
+      {error && <div className="situation__error">שגיאה: {error}</div>}
+
       <div className="situation__table-scroll">
         <table className="situation__table">
           <thead>
@@ -113,10 +165,9 @@ export default function Situation() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
                     <option>הכל</option>
-                    <option>לא פעיל</option>
-                    <option>זמין</option>
-                    <option>התנתק</option>
-                    <option>לא התחבר</option>
+                    <option>מחלץ</option>
+                    <option>משתמש</option>
+                    <option>מנהל</option>
                   </select>
                 </div>
               </th>
@@ -130,6 +181,22 @@ export default function Situation() {
           </thead>
 
           <tbody>
+            {loading && rows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="situation__empty">
+                  טוען משתמשים...
+                </td>
+              </tr>
+            )}
+
+            {!loading && !error && sorted.length === 0 && (
+              <tr>
+                <td colSpan={5} className="situation__empty">
+                  אין משתמשים להצגה
+                </td>
+              </tr>
+            )}
+
             {sorted.map((row) => (
               <tr key={row.id} className="situation__row">
                 <td className="situation__cell" data-label="איש קשר">
@@ -156,13 +223,11 @@ export default function Situation() {
                     </div>
                   )}
                 </td>
-                <td className="situation__cell situation__cell--info" data-label="מידע">
+                <td
+                  className="situation__cell situation__cell--info"
+                  data-label="מידע"
+                >
                   <div className="situation__info-value">
-                    {row.event?.badge && (
-                      <span className="situation__badge--done">
-                        {row.event.badge}
-                      </span>
-                    )}
                     <span>{row.info}</span>
                   </div>
                 </td>
